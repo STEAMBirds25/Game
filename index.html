@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1 Mobile: Calibrated</title>
+    <title>F1 Mobile: Wide Body & Aero</title>
 
     <script type="importmap">
         {
@@ -28,7 +28,7 @@
         #settings-btn { left: 20px; }
         #camera-btn { left: 80px; }
         #reset-btn { left: 140px; background: rgba(200, 0, 0, 0.5); }
-        #calibrate-btn { left: 200px; background: rgba(0, 100, 200, 0.5); font-size: 18px; } /* Botón Calibrar */
+        #calibrate-btn { left: 200px; background: rgba(0, 100, 200, 0.5); font-size: 18px; }
 
         #speed-box {
             position: absolute; top: 20px; right: 20px; text-align: right; color: #0ff; text-shadow: 0 0 5px #0ff; font-family: monospace;
@@ -85,7 +85,7 @@
         <button id="settings-btn" class="top-btn">⚙️</button>
         <button id="camera-btn" class="top-btn">🎥</button>
         <button id="reset-btn" class="top-btn">🔄</button>
-        <button id="calibrate-btn" class="top-btn hidden">🎯</button> <!-- Botón calibrar visible solo en modo gyro -->
+        <button id="calibrate-btn" class="top-btn hidden">🎯</button>
 
         <div id="steering-controls">
             <div id="btn-left" class="steer-btn">⬅️</div>
@@ -111,17 +111,9 @@
         import * as THREE from 'three';
         import * as CANNON from 'cannon-es';
 
-        // --- ESTADO ---
-        const state = { 
-            controlMode: 'buttons', 
-            cameraMode: 'chase', 
-            gyroEnabled: false, 
-            rawGyro: 0, // Valor crudo del sensor
-            gyroOffset: 0 // Valor de calibración (Punto 0)
-        };
+        const state = { controlMode: 'buttons', cameraMode: 'chase', gyroEnabled: false, rawGyro: 0, gyroOffset: 0 };
         const input = { gas: 0, brake: 0, steer: 0, left: 0, right: 0 };
 
-        // --- UI ---
         const uiLayer = document.getElementById('ui-layer');
         const modal = document.getElementById('modal');
         const steeringDiv = document.getElementById('steering-controls');
@@ -133,46 +125,32 @@
             state.controlMode = mode;
             document.getElementById('opt-buttons').className = mode === 'buttons' ? 'option-btn active-opt' : 'option-btn';
             document.getElementById('opt-gyro').className = mode === 'gyro' ? 'option-btn active-opt' : 'option-btn';
-            
             if (mode === 'buttons') {
                 uiLayer.classList.remove('mode-gyro'); uiLayer.classList.add('mode-buttons'); 
-                steeringDiv.classList.remove('hidden');
-                calibrateBtn.classList.add('hidden');
+                steeringDiv.classList.remove('hidden'); calibrateBtn.classList.add('hidden');
             } else {
                 uiLayer.classList.remove('mode-buttons'); uiLayer.classList.add('mode-gyro'); 
-                steeringDiv.classList.add('hidden');
-                calibrateBtn.classList.remove('hidden');
+                steeringDiv.classList.add('hidden'); calibrateBtn.classList.remove('hidden');
                 enableGyro();
             }
         }
 
         document.getElementById('settings-btn').addEventListener('click', () => modal.classList.remove('modal-hidden'));
-        
-        // AL CERRAR/JUGAR CALIBRAMOS
-        document.getElementById('close-btn').addEventListener('click', () => {
-            modal.classList.add('modal-hidden');
-            calibrateGyro();
-        });
-        
+        document.getElementById('close-btn').addEventListener('click', () => { modal.classList.add('modal-hidden'); calibrateGyro(); });
         document.getElementById('opt-buttons').addEventListener('click', () => setControlMode('buttons'));
         document.getElementById('opt-gyro').addEventListener('click', () => setControlMode('gyro'));
         document.getElementById('camera-btn').addEventListener('click', () => state.cameraMode = (state.cameraMode === 'chase') ? 'cockpit' : 'chase');
-        
         document.getElementById('reset-btn').addEventListener('click', () => {
             if(chassisBody) {
-                chassisBody.position.set(0, 3, 0); 
-                chassisBody.quaternion.set(0, 0, 0, 1); 
-                chassisBody.velocity.set(0, 0, 0); 
-                chassisBody.angularVelocity.set(0, 0, 0); 
+                chassisBody.position.set(0, 3, 0); chassisBody.quaternion.set(0, 0, 0, 1); 
+                chassisBody.velocity.set(0, 0, 0); chassisBody.angularVelocity.set(0, 0, 0); 
             }
         });
-
         document.getElementById('calibrate-btn').addEventListener('click', calibrateGyro);
 
         function calibrateGyro() {
             if(state.controlMode === 'gyro') {
-                state.gyroOffset = state.rawGyro; // Guardamos la posición actual como 0
-                // Pequeño feedback visual
+                state.gyroOffset = state.rawGyro;
                 calibrateBtn.style.background = "#0f0";
                 setTimeout(() => calibrateBtn.style.background = "rgba(0, 100, 200, 0.5)", 200);
             }
@@ -185,14 +163,10 @@
             } else { state.gyroEnabled = true; }
         }
 
-        // --- SENSOR LOGIC ---
         window.addEventListener('deviceorientation', (e) => {
             const isLandscape = window.innerWidth > window.innerHeight;
-            if (isLandscape) {
-                if(e.beta !== null) state.rawGyro = e.beta;
-            } else {
-                if(e.gamma !== null) state.rawGyro = e.gamma;
-            }
+            if (isLandscape) { if(e.beta !== null) state.rawGyro = e.beta; } 
+            else { if(e.gamma !== null) state.rawGyro = e.gamma; }
         });
 
         function bindTouch(id, type, val) {
@@ -230,9 +204,7 @@
         const groundMat = new CANNON.Material('ground');
         const wheelMat = new CANNON.Material('wheel');
         const wheelContact = new CANNON.ContactMaterial(wheelMat, groundMat, {
-            friction: 3.5, // Mayor fricción para mejor giro
-            restitution: 0, 
-            contactEquationStiffness: 1000
+            friction: 3.5, restitution: 0, contactEquationStiffness: 1000
         });
         world.addContactMaterial(wheelContact);
 
@@ -248,7 +220,7 @@
         const grid = new THREE.GridHelper(500, 100, 0x444444, 0x222222);
         scene.add(grid);
 
-        // --- COCHE ---
+        // --- COCHE (Wide Body) ---
         const chassisBody = new CANNON.Body({ mass: 300, material: groundMat });
         const chassisShape = new CANNON.Box(new CANNON.Vec3(0.75, 0.15, 2.2));
         chassisBody.addShape(chassisShape, new CANNON.Vec3(0, 0.2, 0)); 
@@ -258,6 +230,7 @@
         chassisBody.allowSleep = false;
         
         const carMesh = new THREE.Group();
+        // Cuerpo principal
         const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff1100, roughness: 0.3, metalness: 0.1 });
         const bodyM = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 4.4), bodyMat);
         bodyM.position.y = 0.2; bodyM.castShadow = true; carMesh.add(bodyM);
@@ -281,13 +254,13 @@
             indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2
         });
 
-        // Configuración Suspensión
+        // Configuración Suspensión (Wide Track)
         const wOpts = {
             radius: 0.38, 
             directionLocal: new CANNON.Vec3(0,-1,0),
             suspensionStiffness: 70, 
             suspensionRestLength: 0.45, 
-            frictionSlip: 5,
+            frictionSlip: 4,
             dampingRelaxation: 2.3,
             dampingCompression: 10.0, 
             maxSuspensionForce: 100000,
@@ -298,10 +271,11 @@
             customSlidingRotationalSpeed: -30
         };
 
-        wOpts.chassisConnectionPointLocal.set(0.95, 0.1, 1.6); vehicle.addWheel(wOpts);
-        wOpts.chassisConnectionPointLocal.set(-0.95, 0.1, 1.6); vehicle.addWheel(wOpts);
-        wOpts.chassisConnectionPointLocal.set(0.95, 0.1, -1.6); vehicle.addWheel(wOpts);
-        wOpts.chassisConnectionPointLocal.set(-0.95, 0.1, -1.6); vehicle.addWheel(wOpts);
+        // Ruedas MUCHO MÁS SEPARADAS (+/- 1.2 en X) para look F1 real
+        wOpts.chassisConnectionPointLocal.set(1.2, 0.1, 1.6); vehicle.addWheel(wOpts);
+        wOpts.chassisConnectionPointLocal.set(-1.2, 0.1, 1.6); vehicle.addWheel(wOpts);
+        wOpts.chassisConnectionPointLocal.set(1.2, 0.1, -1.6); vehicle.addWheel(wOpts);
+        wOpts.chassisConnectionPointLocal.set(-1.2, 0.1, -1.6); vehicle.addWheel(wOpts);
         vehicle.addToWorld(world);
 
         const wheelMeshes = [];
@@ -318,33 +292,29 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // Dirección y Calibración
             let steerVal = 0;
             if (state.controlMode === 'buttons') {
                 if (input.left) steerVal = 0.75;
                 if (input.right) steerVal = -0.75;
             } else if (state.controlMode === 'gyro' && state.gyroEnabled) {
-                // RESTAMOS EL OFFSET para calibrar
                 let calibratedInput = state.rawGyro - state.gyroOffset;
                 let clamp = Math.max(-35, Math.min(35, calibratedInput));
-                // Aumentado a 0.75 para giro más cerrado
                 steerVal = -(clamp / 35) * 0.75; 
             }
             wheelVis.rotation.z = -steerVal * 2; 
 
-            // Aerodinámica
+            // AERODINÁMICA (DOWNFORCE EXTREMA)
             const speed = chassisBody.velocity.length();
             if(speed > 5) {
-                const downforce = speed * 80; 
+                // Aumentado a 160 para pegar el coche al suelo
+                const downforce = speed * 160; 
                 chassisBody.applyLocalForce(new CANNON.Vec3(0, -downforce, 0), new CANNON.Vec3(0, 0, 0));
             }
 
-            // Motor
             const force = 3500;
             vehicle.applyEngineForce(-input.gas * force, 2);
             vehicle.applyEngineForce(-input.gas * force, 3);
             
-            // Frenos
             const brakeForce = 100;
             vehicle.setBrake(input.brake * (brakeForce * 0.5), 0);
             vehicle.setBrake(input.brake * (brakeForce * 0.5), 1);
@@ -364,14 +334,15 @@
                 wheelMeshes[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion);
             }
 
-            // CÁMARA FIXED (Cockpit adelantada)
+            // CAMARAS AJUSTADAS
             if (state.cameraMode === 'chase') {
-                const offset = new THREE.Vector3(0, 3.0, -7.5).applyMatrix4(carMesh.matrixWorld);
-                camera.position.lerp(offset, 0.1);
+                // Más cerca y baja
+                const offset = new THREE.Vector3(0, 2.5, -5.5).applyMatrix4(carMesh.matrixWorld);
+                camera.position.lerp(offset, 0.15); // Un poco más rápida
                 camera.lookAt(carMesh.position.x, carMesh.position.y+0.5, carMesh.position.z);
             } else {
-                // Cockpit View: Más arriba y adelante para no ver negro
-                const offset = new THREE.Vector3(0, 0.95, 0.5).applyMatrix4(carMesh.matrixWorld);
+                // Cockpit: Totalmente rígida, sin lag, posición correcta
+                const offset = new THREE.Vector3(0, 0.95, 0.6).applyMatrix4(carMesh.matrixWorld);
                 camera.position.copy(offset);
                 const lookTarget = new THREE.Vector3(0, 0.8, 10).applyMatrix4(carMesh.matrixWorld);
                 camera.lookAt(lookTarget);
