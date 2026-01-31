@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1 Mobile: Slide Control</title>
+    <title>F1 Mobile: Smooth Physics</title>
 
     <script type="importmap">
         {
@@ -36,7 +36,6 @@
         #speed-val { font-size: 40px; font-weight: bold; line-height: 1; }
         #gear-val { font-size: 16px; color: #fff; }
 
-        /* PEDALES */
         .pedal {
             position: absolute; bottom: 20px; background: linear-gradient(to bottom, #333, #111);
             border: 2px solid #555; border-radius: 6px; box-shadow: 0 5px 10px rgba(0,0,0,0.5);
@@ -56,36 +55,29 @@
         .mode-slide #brake-pedal { left: auto; right: 110px; }
         .mode-gyro #brake-pedal { right: auto; left: 30px; }
 
-        /* --- ZONA DE DIRECCIÓN CONTINUA (SLIDER CAMUFLADO) --- */
+        /* ZONA SLIDER CAMUFLADO */
         #steering-zone {
             position: absolute; bottom: 30px; left: 30px;
             width: 240px; height: 80px;
-            background: rgba(255, 255, 255, 0.05); /* Fondo casi invisible */
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 40px;
             border: 1px solid rgba(255,255,255,0.1);
             pointer-events: auto;
             display: flex; justify-content: space-between; align-items: center;
             padding: 0 10px; box-sizing: border-box;
-            touch-action: none; /* Importante */
-            overflow: hidden;
+            touch-action: none; overflow: hidden;
         }
 
-        /* Las flechas son solo visuales ahora */
-        .arrow-vis {
-            font-size: 30px; opacity: 0.5; pointer-events: none; user-select: none;
-        }
+        .arrow-vis { font-size: 30px; opacity: 0.5; pointer-events: none; user-select: none; }
 
-        /* Indicador de posición (Línea roja) */
         #steer-indicator {
             position: absolute; top: 0; left: 50%;
             width: 4px; height: 100%;
             background: rgba(255, 50, 50, 0.8);
             box-shadow: 0 0 10px red;
             transform: translateX(-50%);
-            transition: transform 0.05s linear; /* Movimiento fluido */
+            transition: transform 0.05s linear;
         }
-        
-        /* Marcador central suave */
         #steering-zone::after {
             content: ''; position: absolute; left: 50%; top: 20%; height: 60%; width: 2px;
             background: rgba(255,255,255,0.1); transform: translateX(-50%);
@@ -114,9 +106,8 @@
         <button id="reset-btn" class="top-btn">🔄</button>
         <button id="calibrate-btn" class="top-btn hidden">🎯</button>
 
-        <!-- ZONA TÁCTIL DE DIRECCIÓN (SLIDER CAMUFLADO) -->
         <div id="steering-zone">
-            <div id="steer-indicator"></div> <!-- Línea roja que se mueve -->
+            <div id="steer-indicator"></div>
             <div class="arrow-vis">⬅️</div>
             <div class="arrow-vis">➡️</div>
         </div>
@@ -131,7 +122,6 @@
             <p>Elige tu estilo:</p>
             <button id="opt-slide" class="option-btn active-opt">DESLIZAR (SLIDER)</button>
             <button id="opt-gyro" class="option-btn">GIROSCOPIO</button>
-            <p style="font-size:12px; color:#aaa; margin-top:15px">Tip: Desliza el dedo entre las flechas para girar suavemente.</p>
             <button id="close-btn" class="option-btn play-btn">JUGAR</button>
         </div>
     </div>
@@ -140,43 +130,25 @@
         import * as THREE from 'three';
         import * as CANNON from 'cannon-es';
 
-        // --- ESTADO ---
-        const state = { 
-            controlMode: 'slide', // 'slide' | 'gyro'
-            cameraMode: 'chase', 
-            gyroEnabled: false, 
-            rawGyro: 0, 
-            gyroOffset: 0,
-            steerVal: 0 // -1 (izq) a 1 (der)
-        };
+        const state = { controlMode: 'slide', cameraMode: 'chase', gyroEnabled: false, rawGyro: 0, gyroOffset: 0, steerVal: 0 };
         const input = { gas: 0, brake: 0 };
 
-        // --- UI ---
         const uiLayer = document.getElementById('ui-layer');
         const modal = document.getElementById('modal');
         const steerZone = document.getElementById('steering-zone');
         const steerIndicator = document.getElementById('steer-indicator');
         const calibrateBtn = document.getElementById('calibrate-btn');
 
-        // --- LÓGICA DE SLIDE TOUCH ---
+        // --- SLIDER LOGIC ---
         let zoneRect = steerZone.getBoundingClientRect();
 
         function handleSteerTouch(clientX) {
-            // Calcular centro de la zona
             const centerX = zoneRect.left + zoneRect.width / 2;
-            // Distancia del dedo al centro
             let delta = clientX - centerX;
-            // Mitad del ancho (radio)
             const range = zoneRect.width / 2;
-            
-            // Normalizar de -1 a 1
             let val = delta / range;
-            // Limitar (Clamp)
             val = Math.max(-1, Math.min(1, val));
-            
-            state.steerVal = -val; // Invertimos: Three.js Izquierda es Positivo
-            
-            // Mover indicador visual (px)
+            state.steerVal = -val; 
             const visualX = val * (zoneRect.width / 2);
             steerIndicator.style.transform = `translateX(calc(-50% + ${visualX}px))`;
         }
@@ -189,18 +161,14 @@
         steerZone.addEventListener('touchstart', (e) => { e.preventDefault(); handleSteerTouch(e.touches[0].clientX); }, {passive: false});
         steerZone.addEventListener('touchmove', (e) => { e.preventDefault(); handleSteerTouch(e.touches[0].clientX); }, {passive: false});
         steerZone.addEventListener('touchend', (e) => { e.preventDefault(); resetSteer(); }, {passive: false});
-        
-        // Actualizar coordenadas si cambia tamaño pantalla
         window.addEventListener('resize', () => zoneRect = steerZone.getBoundingClientRect());
 
-        // --- MENÚ ---
         setControlMode('slide');
 
         function setControlMode(mode) {
             state.controlMode = mode;
             document.getElementById('opt-slide').className = mode === 'slide' ? 'option-btn active-opt' : 'option-btn';
             document.getElementById('opt-gyro').className = mode === 'gyro' ? 'option-btn active-opt' : 'option-btn';
-            
             if (mode === 'slide') {
                 uiLayer.classList.remove('mode-gyro'); uiLayer.classList.add('mode-slide'); 
                 steerZone.classList.remove('hidden'); calibrateBtn.classList.add('hidden');
@@ -216,7 +184,6 @@
         document.getElementById('opt-slide').addEventListener('click', () => setControlMode('slide'));
         document.getElementById('opt-gyro').addEventListener('click', () => setControlMode('gyro'));
         document.getElementById('camera-btn').addEventListener('click', () => state.cameraMode = (state.cameraMode === 'chase') ? 'cockpit' : 'chase');
-        
         document.getElementById('reset-btn').addEventListener('click', () => {
             if(chassisBody) {
                 chassisBody.position.set(0, 3, 0); chassisBody.quaternion.set(0, 0, 0, 1); 
@@ -232,14 +199,12 @@
                 setTimeout(() => calibrateBtn.style.background = "rgba(0, 100, 200, 0.5)", 200);
             }
         }
-
         function enableGyro() {
             if (state.gyroEnabled) return;
             if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
                 DeviceOrientationEvent.requestPermission().then(res => { if (res === 'granted') state.gyroEnabled = true; });
             } else { state.gyroEnabled = true; }
         }
-
         window.addEventListener('deviceorientation', (e) => {
             const isLandscape = window.innerWidth > window.innerHeight;
             if (isLandscape) { if(e.beta !== null) state.rawGyro = e.beta; } 
@@ -278,7 +243,7 @@
         const groundMat = new CANNON.Material('ground');
         const wheelMat = new CANNON.Material('wheel');
         const wheelContact = new CANNON.ContactMaterial(wheelMat, groundMat, {
-            friction: 3.5, restitution: 0, contactEquationStiffness: 1000
+            friction: 2.5, restitution: 0, contactEquationStiffness: 1000
         });
         world.addContactMaterial(wheelContact);
 
@@ -327,18 +292,19 @@
             indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2
         });
 
+        // Configuración Suspensión SUAVE Y ESTABLE
         const wOpts = {
             radius: 0.38, 
             directionLocal: new CANNON.Vec3(0,-1,0),
-            suspensionStiffness: 70, 
-            suspensionRestLength: 0.45, 
-            frictionSlip: 4,
-            dampingRelaxation: 2.3,
-            dampingCompression: 10.0, 
+            suspensionStiffness: 45, // Mucho más suave (antes 70)
+            suspensionRestLength: 0.5, 
+            frictionSlip: 3, 
+            dampingRelaxation: 6.0, // Alta amortiguación para matar el rebote
+            dampingCompression: 4.5, 
             maxSuspensionForce: 100000,
             axleLocal: new CANNON.Vec3(-1,0,0),
             chassisConnectionPointLocal: new CANNON.Vec3(0,0,0),
-            maxSuspensionTravel: 0.2,
+            maxSuspensionTravel: 0.3, // Un poco más de recorrido
             useCustomSlidingRotationalSpeed: true,
             customSlidingRotationalSpeed: -30
         };
@@ -359,7 +325,6 @@
             wheelMeshes.push(m);
         }
 
-        // --- ANIMACIÓN ---
         function animate() {
             requestAnimationFrame(animate);
 
