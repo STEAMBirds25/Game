@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1 Mobile: Smooth Physics</title>
+    <title>F1 Mobile: No Bounce</title>
 
     <script type="importmap">
         {
@@ -55,7 +55,7 @@
         .mode-slide #brake-pedal { left: auto; right: 110px; }
         .mode-gyro #brake-pedal { right: auto; left: 30px; }
 
-        /* ZONA SLIDER CAMUFLADO */
+        /* ZONA SLIDER */
         #steering-zone {
             position: absolute; bottom: 30px; left: 30px;
             width: 240px; height: 80px;
@@ -100,7 +100,6 @@
 
     <div id="ui-layer" class="mode-slide">
         <div id="speed-box"><div id="speed-val">0</div><div id="gear-val">KM/H</div></div>
-        
         <button id="settings-btn" class="top-btn">⚙️</button>
         <button id="camera-btn" class="top-btn">🎥</button>
         <button id="reset-btn" class="top-btn">🔄</button>
@@ -141,7 +140,6 @@
 
         // --- SLIDER LOGIC ---
         let zoneRect = steerZone.getBoundingClientRect();
-
         function handleSteerTouch(clientX) {
             const centerX = zoneRect.left + zoneRect.width / 2;
             let delta = clientX - centerX;
@@ -152,19 +150,16 @@
             const visualX = val * (zoneRect.width / 2);
             steerIndicator.style.transform = `translateX(calc(-50% + ${visualX}px))`;
         }
-
         function resetSteer() {
             state.steerVal = 0;
             steerIndicator.style.transform = `translateX(-50%)`;
         }
-
         steerZone.addEventListener('touchstart', (e) => { e.preventDefault(); handleSteerTouch(e.touches[0].clientX); }, {passive: false});
         steerZone.addEventListener('touchmove', (e) => { e.preventDefault(); handleSteerTouch(e.touches[0].clientX); }, {passive: false});
         steerZone.addEventListener('touchend', (e) => { e.preventDefault(); resetSteer(); }, {passive: false});
         window.addEventListener('resize', () => zoneRect = steerZone.getBoundingClientRect());
 
         setControlMode('slide');
-
         function setControlMode(mode) {
             state.controlMode = mode;
             document.getElementById('opt-slide').className = mode === 'slide' ? 'option-btn active-opt' : 'option-btn';
@@ -260,7 +255,7 @@
         scene.add(grid);
 
         // --- COCHE ---
-        const chassisBody = new CANNON.Body({ mass: 300, material: groundMat });
+        const chassisBody = new CANNON.Body({ mass: 200, material: groundMat }); // MASA REDUCIDA
         const chassisShape = new CANNON.Box(new CANNON.Vec3(0.75, 0.15, 2.2));
         chassisBody.addShape(chassisShape, new CANNON.Vec3(0, 0.2, 0)); 
         chassisBody.position.set(0, 2, 0);
@@ -292,19 +287,19 @@
             indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2
         });
 
-        // Configuración Suspensión SUAVE Y ESTABLE
+        // Configuración Suspensión ANTI-REBOTE
         const wOpts = {
             radius: 0.38, 
             directionLocal: new CANNON.Vec3(0,-1,0),
-            suspensionStiffness: 45, // Mucho más suave (antes 70)
+            suspensionStiffness: 55, // Rigidez Media-Alta
             suspensionRestLength: 0.5, 
             frictionSlip: 3, 
-            dampingRelaxation: 6.0, // Alta amortiguación para matar el rebote
-            dampingCompression: 4.5, 
+            dampingRelaxation: 8.5, // DAMPING MUY ALTO (Evita que el muelle "dispare" el coche hacia arriba)
+            dampingCompression: 5.0, 
             maxSuspensionForce: 100000,
             axleLocal: new CANNON.Vec3(-1,0,0),
             chassisConnectionPointLocal: new CANNON.Vec3(0,0,0),
-            maxSuspensionTravel: 0.3, // Un poco más de recorrido
+            maxSuspensionTravel: 0.25,
             useCustomSlidingRotationalSpeed: true,
             customSlidingRotationalSpeed: -30
         };
@@ -347,7 +342,7 @@
                 chassisBody.applyLocalForce(new CANNON.Vec3(0, -downforce, 0), new CANNON.Vec3(0, 0, 0));
             }
 
-            const force = 3500;
+            const force = 2500; // Ajustado para la nueva masa de 200
             vehicle.applyEngineForce(-input.gas * force, 2);
             vehicle.applyEngineForce(-input.gas * force, 3);
             
