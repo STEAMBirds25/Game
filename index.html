@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1 Mobile: Physics Fix</title>
+    <title>F1 Mobile: Aero Edition</title>
 
     <script type="importmap">
         {
@@ -16,90 +16,63 @@
     </script>
 
     <style>
-        body { 
-            margin: 0; overflow: hidden; background: #1a1a1a; 
-            font-family: 'Segoe UI', sans-serif; 
-            touch-action: none; user-select: none; -webkit-user-select: none; 
-        }
-
+        body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Segoe UI', sans-serif; touch-action: none; user-select: none; -webkit-user-select: none; }
+        
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
         
         .top-btn {
-            position: absolute; top: 20px;
-            font-size: 24px; background: rgba(0,0,0,0.5); color: white;
-            border: 1px solid #555; border-radius: 8px; 
-            width: 50px; height: 50px; cursor: pointer; pointer-events: auto;
+            position: absolute; top: 20px; font-size: 24px; background: rgba(0,0,0,0.5); color: white;
+            border: 1px solid #555; border-radius: 8px; width: 50px; height: 50px; cursor: pointer; pointer-events: auto;
             display: flex; justify-content: center; align-items: center;
         }
         #settings-btn { left: 20px; }
         #camera-btn { left: 80px; }
 
         #speed-box {
-            position: absolute; top: 20px; right: 20px;
-            text-align: right; color: #0ff; text-shadow: 0 0 5px #0ff;
-            font-family: monospace;
+            position: absolute; top: 20px; right: 20px; text-align: right; color: #0ff; text-shadow: 0 0 5px #0ff; font-family: monospace;
         }
         #speed-val { font-size: 40px; font-weight: bold; line-height: 1; }
         #gear-val { font-size: 16px; color: #fff; }
 
-        /* PEDALES CON TRANSICIÓN */
         .pedal {
-            position: absolute; bottom: 20px;
-            background: linear-gradient(to bottom, #333, #111);
-            border: 2px solid #555; border-radius: 6px;
-            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
-            pointer-events: auto; 
-            display: flex; justify-content: center; align-items: flex-end;
+            position: absolute; bottom: 20px; background: linear-gradient(to bottom, #333, #111);
+            border: 2px solid #555; border-radius: 6px; box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+            pointer-events: auto; display: flex; justify-content: center; align-items: flex-end;
             color: #aaa; font-size: 12px; font-weight: bold; padding-bottom: 8px;
             background-image: repeating-linear-gradient(0deg, transparent, transparent 10px, #000 10px, #000 12px);
             transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
         }
         .pedal:active, .pedal.pressed { transform: scale(0.95) translateY(3px); color: white; border-color: white; }
 
-        #gas-pedal {
-            right: 20px; width: 70px; height: 160px;
-            border-bottom: 5px solid #00cc00;
-        }
+        #gas-pedal { right: 20px; width: 70px; height: 160px; border-bottom: 5px solid #00cc00; }
         #gas-pedal.pressed { background-color: #040; box-shadow: 0 0 15px #0f0; }
 
-        #brake-pedal {
-            width: 90px; height: 90px;
-            border-bottom: 5px solid #cc0000;
-        }
+        #brake-pedal { width: 90px; height: 90px; border-bottom: 5px solid #cc0000; }
         #brake-pedal.pressed { background-color: #400; box-shadow: 0 0 15px #f00; }
 
-        /* POSICIONES DINÁMICAS */
         .mode-buttons #brake-pedal { left: auto; right: 110px; }
         .mode-gyro #brake-pedal { right: auto; left: 30px; }
 
-        /* BOTONES DIRECCIÓN */
         #steering-controls {
-            position: absolute; bottom: 30px; left: 30px;
-            display: flex; gap: 20px; pointer-events: auto;
-            transition: opacity 0.3s;
+            position: absolute; bottom: 30px; left: 30px; display: flex; gap: 20px; pointer-events: auto; transition: opacity 0.3s;
         }
         .steer-btn {
-            width: 70px; height: 70px; border-radius: 50%;
-            background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);
-            color: white; font-size: 30px; display: flex; justify-content: center; align-items: center;
-            backdrop-filter: blur(4px);
+            width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3);
+            color: white; font-size: 30px; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(4px);
         }
         .steer-btn:active, .steer-btn.pressed { background: rgba(255,255,255,0.3); transform: scale(0.95); }
         
         .hidden { opacity: 0; pointer-events: none; }
         .modal-hidden { display: none !important; }
 
-        /* MODAL */
         #modal {
-            position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.95); z-index: 200;
+            position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 200;
             display: flex; justify-content: center; align-items: center;
         }
         .modal-content { background: #222; padding: 20px; border-radius: 10px; color: white; width: 300px; text-align: center; }
         .option-btn { width: 100%; padding: 15px; margin-top: 10px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer; background: #444; color: #aaa; }
         .active-opt { border: 2px solid #0ff; color: #fff; background: #333; box-shadow: 0 0 10px #0ff; }
         .play-btn { background: #c00; color: white; font-weight: bold; margin-top: 20px; color: white; }
-
     </style>
 </head>
 <body>
@@ -132,16 +105,11 @@
         import * as THREE from 'three';
         import * as CANNON from 'cannon-es';
 
-        // --- 1. ESTADO ---
-        const state = {
-            controlMode: 'buttons', 
-            cameraMode: 'chase',
-            gyroEnabled: false,
-            gyroVal: 0
-        };
+        // --- ESTADO ---
+        const state = { controlMode: 'buttons', cameraMode: 'chase', gyroEnabled: false, gyroVal: 0 };
         const input = { gas: 0, brake: 0, steer: 0, left: 0, right: 0 };
 
-        // --- 2. UI ---
+        // --- UI ---
         const uiLayer = document.getElementById('ui-layer');
         const modal = document.getElementById('modal');
         const steeringDiv = document.getElementById('steering-controls');
@@ -154,13 +122,9 @@
             document.getElementById('opt-gyro').className = mode === 'gyro' ? 'option-btn active-opt' : 'option-btn';
             
             if (mode === 'buttons') {
-                uiLayer.classList.remove('mode-gyro');
-                uiLayer.classList.add('mode-buttons');
-                steeringDiv.classList.remove('hidden');
+                uiLayer.classList.remove('mode-gyro'); uiLayer.classList.add('mode-buttons'); steeringDiv.classList.remove('hidden');
             } else {
-                uiLayer.classList.remove('mode-buttons');
-                uiLayer.classList.add('mode-gyro');
-                steeringDiv.classList.add('hidden');
+                uiLayer.classList.remove('mode-buttons'); uiLayer.classList.add('mode-gyro'); steeringDiv.classList.add('hidden');
                 enableGyro();
             }
         }
@@ -169,16 +133,12 @@
         document.getElementById('close-btn').addEventListener('click', () => modal.classList.add('modal-hidden'));
         document.getElementById('opt-buttons').addEventListener('click', () => setControlMode('buttons'));
         document.getElementById('opt-gyro').addEventListener('click', () => setControlMode('gyro'));
-        document.getElementById('camera-btn').addEventListener('click', () => {
-            state.cameraMode = (state.cameraMode === 'chase') ? 'cockpit' : 'chase';
-        });
+        document.getElementById('camera-btn').addEventListener('click', () => state.cameraMode = (state.cameraMode === 'chase') ? 'cockpit' : 'chase');
 
         function enableGyro() {
             if (state.gyroEnabled) return;
             if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission().then(res => {
-                    if (res === 'granted') state.gyroEnabled = true;
-                });
+                DeviceOrientationEvent.requestPermission().then(res => { if (res === 'granted') state.gyroEnabled = true; });
             } else { state.gyroEnabled = true; }
         }
         window.addEventListener('deviceorientation', (e) => { if(e.gamma) state.gyroVal = e.gamma; });
@@ -197,15 +157,13 @@
             el.addEventListener('mouseup', ()=>{ update(false); });
             el.addEventListener('mouseleave', ()=>{ update(false); });
         }
-        bindTouch('gas-pedal', 'gas', 1);
-        bindTouch('brake-pedal', 'brake', 1);
-        bindTouch('btn-left', 'steer_left', 1);
-        bindTouch('btn-right', 'steer_right', 1);
+        bindTouch('gas-pedal', 'gas', 1); bindTouch('brake-pedal', 'brake', 1);
+        bindTouch('btn-left', 'steer_left', 1); bindTouch('btn-right', 'steer_right', 1);
 
-        // --- 3. FÍSICAS Y MUNDO ---
+        // --- 3D ENGINE ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x222222);
-        scene.fog = new THREE.Fog(0x222222, 20, 150);
+        scene.background = new THREE.Color(0x1a1a1a);
+        scene.fog = new THREE.Fog(0x1a1a1a, 20, 150);
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.05, 500);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -217,88 +175,85 @@
         world.gravity.set(0, -9.82, 0);
         world.broadphase = new CANNON.SAPBroadphase(world);
 
-        // MATERIALES (IMPORTANTE PARA QUE NO PATINE TANTO)
-        const groundMat = new CANNON.Material();
-        const wheelMat = new CANNON.Material();
+        const groundMat = new CANNON.Material('ground');
+        const wheelMat = new CANNON.Material('wheel');
         const wheelContact = new CANNON.ContactMaterial(wheelMat, groundMat, {
-            friction: 2.5,
-            restitution: 0,
-            contactEquationStiffness: 1000
+            friction: 2.0, restitution: 0, contactEquationStiffness: 1000
         });
         world.addContactMaterial(wheelContact);
 
-        // LUZ Y SUELO
         const sun = new THREE.DirectionalLight(0xffffff, 1.5);
         sun.position.set(50, 100, 50); sun.castShadow = true; scene.add(sun);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
         
         const groundBody = new CANNON.Body({ mass: 0, material: groundMat });
         groundBody.addShape(new CANNON.Plane());
         groundBody.quaternion.setFromEuler(-Math.PI/2, 0, 0);
         world.addBody(groundBody);
         
-        const grid = new THREE.GridHelper(500, 100, 0x666666, 0x333333);
+        const grid = new THREE.GridHelper(500, 100, 0x444444, 0x222222);
         scene.add(grid);
 
-        // --- 4. COCHE (CORREGIDO) ---
-        const chassisBody = new CANNON.Body({ mass: 150, material: groundMat }); // Usamos un material base
-        chassisBody.addShape(new CANNON.Box(new CANNON.Vec3(0.7, 0.25, 2.0)), new CANNON.Vec3(0,0.3,0));
-        chassisBody.position.set(0, 3, 0); // Empezar más alto para no atravesar suelo
+        // --- COCHE (FIXED) ---
+        // Hacemos el chasis más fino (0.2 en Y) y lo movemos hacia arriba dentro del cuerpo
+        // Esto baja el CENTRO DE MASA relativo, evitando caballitos.
+        const chassisBody = new CANNON.Body({ mass: 300, material: groundMat }); // Aumentada masa para estabilidad
+        const chassisShape = new CANNON.Box(new CANNON.Vec3(0.75, 0.15, 2.2)); // Más fino y largo
+        
+        chassisBody.addShape(chassisShape, new CANNON.Vec3(0, 0.2, 0)); 
+        chassisBody.position.set(0, 2, 0);
         chassisBody.angularDamping = 0.5;
-        chassisBody.allowSleep = false; // <<<--- SOLUCIÓN: PROHIBIR DORMIR
+        chassisBody.linearDamping = 0.05; // Resistencia al aire básica
+        chassisBody.allowSleep = false;
         
         // Visual
         const carMesh = new THREE.Group();
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xdd0000, roughness: 0.2 });
-        const bodyM = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.5, 4.0), bodyMat);
-        bodyM.position.y = 0.3; bodyM.castShadow = true; carMesh.add(bodyM);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff1100, roughness: 0.3, metalness: 0.1 });
+        const bodyM = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 4.4), bodyMat);
+        bodyM.position.y = 0.2; bodyM.castShadow = true; carMesh.add(bodyM);
         
-        const cockpitM = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.2, 1.2), new THREE.MeshStandardMaterial({color:0x111111}));
-        cockpitM.position.set(0, 0.65, 0.2); carMesh.add(cockpitM);
+        const cockpitM = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.25, 1.2), new THREE.MeshStandardMaterial({color:0x111111}));
+        cockpitM.position.set(0, 0.45, 0.2); carMesh.add(cockpitM);
 
-        const wing = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.1, 0.6), new THREE.MeshStandardMaterial({color:0x111111}));
-        wing.position.set(0, 0.8, -1.8); carMesh.add(wing);
-
-        const nose = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 1.0), bodyMat);
-        nose.position.set(0, 0.1, 2.4); carMesh.add(nose);
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, 0.6), new THREE.MeshStandardMaterial({color:0x111111}));
+        wing.position.set(0, 0.7, -1.9); carMesh.add(wing);
         
         const wheelVis = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.02, 8, 16), new THREE.MeshStandardMaterial({color:0x333333}));
         wheelVis.position.set(0, 0.6, 0.5); carMesh.add(wheelVis);
 
         scene.add(carMesh);
 
-        // Sistema Vehículo
         const vehicle = new CANNON.RaycastVehicle({
             chassisBody: chassisBody,
             indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2
         });
 
-        // Configuración de Ruedas Ajustada
+        // Configuración Suspensión OPTIMIZADA
         const wOpts = {
-            radius: 0.35, 
+            radius: 0.38, 
             directionLocal: new CANNON.Vec3(0,-1,0),
-            suspensionStiffness: 40, 
-            suspensionRestLength: 0.4, // Un poco más largo para evitar que la panza roce
-            frictionSlip: 3, 
-            dampingRelaxation: 2.3, 
-            dampingCompression: 4.4, 
-            maxSuspensionForce: 100000, 
-            axleLocal: new CANNON.Vec3(-1,0,0), 
+            suspensionStiffness: 60,  // Dura para no tocar suelo
+            suspensionRestLength: 0.45, 
+            frictionSlip: 5,
+            dampingRelaxation: 2.3,
+            dampingCompression: 4.5,
+            maxSuspensionForce: 100000,
+            axleLocal: new CANNON.Vec3(-1,0,0),
             chassisConnectionPointLocal: new CANNON.Vec3(0,0,0),
-            maxSuspensionTravel: 0.3, 
-            useCustomSlidingRotationalSpeed: true, 
+            maxSuspensionTravel: 0.2, // Recorrido corto
+            useCustomSlidingRotationalSpeed: true,
             customSlidingRotationalSpeed: -30
         };
 
-        wOpts.chassisConnectionPointLocal.set(0.9, 0, 1.4); vehicle.addWheel(wOpts);
-        wOpts.chassisConnectionPointLocal.set(-0.9, 0, 1.4); vehicle.addWheel(wOpts);
-        wOpts.chassisConnectionPointLocal.set(0.9, 0, -1.4); vehicle.addWheel(wOpts);
-        wOpts.chassisConnectionPointLocal.set(-0.9, 0, -1.4); vehicle.addWheel(wOpts);
+        // Ruedas más separadas (Long Wheelbase) para estabilidad
+        wOpts.chassisConnectionPointLocal.set(0.95, 0.1, 1.6); vehicle.addWheel(wOpts);
+        wOpts.chassisConnectionPointLocal.set(-0.95, 0.1, 1.6); vehicle.addWheel(wOpts);
+        wOpts.chassisConnectionPointLocal.set(0.95, 0.1, -1.6); vehicle.addWheel(wOpts); // Traseras más atrás
+        wOpts.chassisConnectionPointLocal.set(-0.95, 0.1, -1.6); vehicle.addWheel(wOpts);
         vehicle.addToWorld(world);
 
-        // Ruedas Visuales
         const wheelMeshes = [];
-        const wGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.5, 24);
+        const wGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.55, 32);
         wGeo.rotateZ(Math.PI/2);
         const wMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
         for(let i=0; i<4; i++){
@@ -307,7 +262,7 @@
             wheelMeshes.push(m);
         }
 
-        // --- 5. ANIMACIÓN ---
+        // --- ANIMACIÓN ---
         function animate() {
             requestAnimationFrame(animate);
 
@@ -322,8 +277,17 @@
             }
             wheelVis.rotation.z = -steerVal * 2; 
 
-            // Motor (Aumentado a 3000)
-            const force = 3000;
+            // AERODINÁMICA (DOWNFORCE)
+            // Esto es crucial: aplica fuerza hacia abajo según la velocidad
+            const speed = chassisBody.velocity.length();
+            if(speed > 5) {
+                // Empujamos el coche hacia abajo para simular alerones
+                const downforce = speed * 80; 
+                chassisBody.applyLocalForce(new CANNON.Vec3(0, -downforce, 0), new CANNON.Vec3(0, 0, 0));
+            }
+
+            // Motor (Progresivo)
+            const force = 3500;
             vehicle.applyEngineForce(-input.gas * force, 2);
             vehicle.applyEngineForce(-input.gas * force, 3);
             
@@ -333,7 +297,6 @@
 
             world.fixedStep();
 
-            // Sync Visual
             carMesh.position.copy(chassisBody.position);
             carMesh.quaternion.copy(chassisBody.quaternion);
             for(let i=0; i<4; i++){
@@ -342,19 +305,18 @@
                 wheelMeshes[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion);
             }
 
-            // Cámara
             if (state.cameraMode === 'chase') {
-                const offset = new THREE.Vector3(0, 3.5, -7).applyMatrix4(carMesh.matrixWorld);
+                const offset = new THREE.Vector3(0, 3.0, -7.5).applyMatrix4(carMesh.matrixWorld);
                 camera.position.lerp(offset, 0.1);
-                camera.lookAt(carMesh.position.x, carMesh.position.y+1, carMesh.position.z);
+                camera.lookAt(carMesh.position.x, carMesh.position.y+0.5, carMesh.position.z);
             } else {
-                const offset = new THREE.Vector3(0, 0.85, 0.2).applyMatrix4(carMesh.matrixWorld);
+                const offset = new THREE.Vector3(0, 0.75, 0.4).applyMatrix4(carMesh.matrixWorld);
                 camera.position.copy(offset);
-                const lookTarget = new THREE.Vector3(0, 0.8, 10).applyMatrix4(carMesh.matrixWorld);
+                const lookTarget = new THREE.Vector3(0, 0.6, 10).applyMatrix4(carMesh.matrixWorld);
                 camera.lookAt(lookTarget);
             }
 
-            document.getElementById('speed-val').innerText = Math.floor(chassisBody.velocity.length()*3.6);
+            document.getElementById('speed-val').innerText = Math.floor(speed*3.6);
             renderer.render(scene, camera);
         }
         animate();
