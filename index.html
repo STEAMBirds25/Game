@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1: Final Fixed Cockpit + Rear View</title>
+    <title>F1: Perfect Cockpit & Rear View</title>
 
     <script type="importmap">
         {
@@ -28,9 +28,7 @@
         #settings-btn { left: 20px; }
         #camera-btn { left: 80px; }
         #reset-btn { left: 140px; background: rgba(200, 0, 0, 0.5); }
-        /* Botón Mirar Atrás */
         #lookback-btn { left: 200px; background: rgba(255, 165, 0, 0.5); } 
-        
         #calibrate-btn { left: 260px; background: rgba(0, 100, 200, 0.5); font-size: 18px; }
 
         #speed-box {
@@ -146,12 +144,11 @@
         import * as THREE from 'three';
         import * as CANNON from 'cannon-es';
 
-        // --- ESTADO UNIFICADO ---
         const controls = {
             gasTouch: 0, gasKey: 0, gasPad: 0,
             brakeTouch: 0, brakeKey: 0, brakePad: 0,
             steerTouch: 0, steerKey: 0, steerMouse: 0, steerPad: 0,
-            lookBack: false // Nuevo estado para mirar atrás
+            lookBack: false
         };
         
         const state = { 
@@ -170,7 +167,7 @@
         const notifyEl = document.getElementById('input-notify');
         const lookBackBtn = document.getElementById('lookback-btn');
 
-        // --- NOTIFICACIONES & INPUT AUTO ---
+        // --- NOTIFICACIONES ---
         let notifyTimer;
         function showNotification(text, icon = "") {
             notifyEl.innerHTML = `${icon} ${text}`;
@@ -201,18 +198,15 @@
                 const active = Math.abs(gp.axes[0]) > 0.1 || gp.buttons.some(b => b.pressed);
                 if (active) setTouchVisibility(false);
 
-                // Dirección
                 const rawSteer = gp.axes[0]; 
                 controls.steerPad = (Math.abs(rawSteer) > 0.1) ? -rawSteer : 0;
 
-                // Gas
                 const btnGas = gp.buttons[7]; // R2
                 const btnA = gp.buttons[0];
                 if (btnGas && typeof btnGas === 'object' && btnGas.value > 0.1) controls.gasPad = btnGas.value;
                 else if (btnA && btnA.pressed) controls.gasPad = 1;
                 else controls.gasPad = 0;
 
-                // Freno
                 const btnBrake = gp.buttons[6]; // L2
                 const btnB = gp.buttons[1];
                 const btnX = gp.buttons[2];
@@ -220,7 +214,6 @@
                 else if ((btnB && btnB.pressed) || (btnX && btnX.pressed)) controls.brakePad = 1;
                 else controls.brakePad = 0;
 
-                // Mirar Atrás (L1 / LB / Botón 4)
                 controls.lookBack = gp.buttons[4]?.pressed || false;
 
                 if (gp.buttons[3].pressed) toggleCameraDebounce();
@@ -265,7 +258,6 @@
             if (key === 'b') controls.lookBack = false;
         });
 
-        // Eventos botón Mirar Atrás Táctil/Mouse
         lookBackBtn.addEventListener('mousedown', () => controls.lookBack = true);
         lookBackBtn.addEventListener('mouseup', () => controls.lookBack = false);
         lookBackBtn.addEventListener('mouseleave', () => controls.lookBack = false);
@@ -374,7 +366,9 @@
         scene.background = new THREE.Color(0x1a1a1a);
         scene.fog = new THREE.Fog(0x1a1a1a, 20, 150);
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.05, 500);
+        // ** CORRECCIÓN LENTE: NEAR 0.01 PARA EVITAR CLIPPING CON VOLANTE **
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.01, 500);
+        
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
@@ -428,7 +422,8 @@
         nose.position.set(0, 0.3, 2.4); carMesh.add(nose);
         
         const wheelVis = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.02, 8, 16), new THREE.MeshStandardMaterial({color:0x333333}));
-        wheelVis.position.set(0, 0.6, 0.5); 
+        // ** CORRECCIÓN: VOLANTE MAS ADELANTE (0.6 en vez de 0.5) **
+        wheelVis.position.set(0, 0.6, 0.6); 
         wheelVis.rotation.set(0.2, 0, 0);
         carMesh.add(wheelVis);
 
@@ -464,14 +459,12 @@
             wheelMeshes.push(m);
         }
 
-        // Variable para ayudar en la rotación
         const dummy = new THREE.Object3D();
 
         function animate() {
             requestAnimationFrame(animate);
             pollGamepads();
 
-            // 1. INPUTS
             const finalGas = Math.max(controls.gasKey, controls.gasTouch, controls.gasPad);
             const finalBrake = Math.max(controls.brakeKey, controls.brakeTouch, controls.brakePad);
 
@@ -488,7 +481,6 @@
             
             wheelVis.rotation.z = -finalSteer * 2; 
 
-            // 2. FISICA
             const speed = chassisBody.velocity.length();
             if(speed > 5) chassisBody.applyLocalForce(new CANNON.Vec3(0, -speed * 160, 0), new CANNON.Vec3(0, 0, 0));
 
@@ -515,33 +507,25 @@
                 wheelMeshes[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion);
             }
 
-            // 3. CAMARA LÓGICA
-            // Definir offset base según modo
-            let targetOffset;
+            // --- CÁMARA ---
             if (state.cameraMode === 'chase') {
-                targetOffset = controls.lookBack 
-                    ? new THREE.Vector3(0, 2.5, 6.0)  // Chase Mirar atrás (delante del coche)
-                    : new THREE.Vector3(0, 2.5, -5.5); // Chase Normal (detrás del coche)
+                const targetOffset = controls.lookBack 
+                    ? new THREE.Vector3(0, 2.5, 6.0)  // Mirar atrás
+                    : new THREE.Vector3(0, 2.5, -5.5); // Normal
                 
                 const worldPos = targetOffset.applyMatrix4(carMesh.matrixWorld);
-                camera.position.lerp(worldPos, 0.15); // Suavizado de posición
+                camera.position.lerp(worldPos, 0.15);
                 camera.lookAt(carMesh.position.x, carMesh.position.y + 0.5, carMesh.position.z);
             
             } else {
-                // COCKPIT CAM FIXED & FLIPPED
-                const cockpitOffset = new THREE.Vector3(0, 0.7, 0.35).applyMatrix4(carMesh.matrixWorld);
+                // COCKPIT CAM FIXED
+                // Posición ajustada para estar DETRAS del volante pero delante del asiento
+                const cockpitOffset = new THREE.Vector3(0, 0.75, 0.35).applyMatrix4(carMesh.matrixWorld);
                 camera.position.copy(cockpitOffset);
 
-                // Rotación suave del coche
+                // Rotación
                 dummy.quaternion.copy(carMesh.quaternion);
-                
-                // Si miramos atrás en cockpit, rotamos 0 grados (porque la cámara base está invertida)
-                // Si miramos normal, rotamos 180 (Math.PI) para corregir la vista "al revés"
-                if (!controls.lookBack) {
-                    dummy.rotateY(Math.PI); 
-                }
-                
-                // Aplicamos slerp para evitar temblores
+                if (!controls.lookBack) dummy.rotateY(Math.PI); 
                 camera.quaternion.slerp(dummy.quaternion, 0.2);
             }
 
