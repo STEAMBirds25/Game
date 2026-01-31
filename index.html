@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1 Mobile: Cockpit & Gyro Fixed</title>
+    <title>F1 Mobile: Calibrated</title>
 
     <script type="importmap">
         {
@@ -28,6 +28,7 @@
         #settings-btn { left: 20px; }
         #camera-btn { left: 80px; }
         #reset-btn { left: 140px; background: rgba(200, 0, 0, 0.5); }
+        #calibrate-btn { left: 200px; background: rgba(0, 100, 200, 0.5); font-size: 18px; } /* Botón Calibrar */
 
         #speed-box {
             position: absolute; top: 20px; right: 20px; text-align: right; color: #0ff; text-shadow: 0 0 5px #0ff; font-family: monospace;
@@ -35,7 +36,6 @@
         #speed-val { font-size: 40px; font-weight: bold; line-height: 1; }
         #gear-val { font-size: 16px; color: #fff; }
 
-        /* PEDALES */
         .pedal {
             position: absolute; bottom: 20px; background: linear-gradient(to bottom, #333, #111);
             border: 2px solid #555; border-radius: 6px; box-shadow: 0 5px 10px rgba(0,0,0,0.5);
@@ -85,6 +85,7 @@
         <button id="settings-btn" class="top-btn">⚙️</button>
         <button id="camera-btn" class="top-btn">🎥</button>
         <button id="reset-btn" class="top-btn">🔄</button>
+        <button id="calibrate-btn" class="top-btn hidden">🎯</button> <!-- Botón calibrar visible solo en modo gyro -->
 
         <div id="steering-controls">
             <div id="btn-left" class="steer-btn">⬅️</div>
@@ -100,9 +101,9 @@
             <h2>Configuración</h2>
             <p>Elige tu estilo:</p>
             <button id="opt-buttons" class="option-btn active-opt">BOTONES TÁCTILES</button>
-            <button id="opt-gyro" class="option-btn">GIROSCOPIO (Inclinación)</button>
-            <p style="font-size:12px; color:#aaa; margin-top:10px">Nota: En Gyro, inclina el móvil como volante.</p>
-            <button id="close-btn" class="option-btn play-btn">JUGAR</button>
+            <button id="opt-gyro" class="option-btn">GIROSCOPIO</button>
+            <p style="font-size:12px; color:#aaa; margin-top:15px">Tip: Al pulsar JUGAR en modo Gyro, sostén el móvil recto para calibrar.</p>
+            <button id="close-btn" class="option-btn play-btn">JUGAR (Calibrar)</button>
         </div>
     </div>
 
@@ -111,13 +112,20 @@
         import * as CANNON from 'cannon-es';
 
         // --- ESTADO ---
-        const state = { controlMode: 'buttons', cameraMode: 'chase', gyroEnabled: false, gyroVal: 0 };
+        const state = { 
+            controlMode: 'buttons', 
+            cameraMode: 'chase', 
+            gyroEnabled: false, 
+            rawGyro: 0, // Valor crudo del sensor
+            gyroOffset: 0 // Valor de calibración (Punto 0)
+        };
         const input = { gas: 0, brake: 0, steer: 0, left: 0, right: 0 };
 
         // --- UI ---
         const uiLayer = document.getElementById('ui-layer');
         const modal = document.getElementById('modal');
         const steeringDiv = document.getElementById('steering-controls');
+        const calibrateBtn = document.getElementById('calibrate-btn');
 
         setControlMode('buttons');
 
@@ -127,15 +135,25 @@
             document.getElementById('opt-gyro').className = mode === 'gyro' ? 'option-btn active-opt' : 'option-btn';
             
             if (mode === 'buttons') {
-                uiLayer.classList.remove('mode-gyro'); uiLayer.classList.add('mode-buttons'); steeringDiv.classList.remove('hidden');
+                uiLayer.classList.remove('mode-gyro'); uiLayer.classList.add('mode-buttons'); 
+                steeringDiv.classList.remove('hidden');
+                calibrateBtn.classList.add('hidden');
             } else {
-                uiLayer.classList.remove('mode-buttons'); uiLayer.classList.add('mode-gyro'); steeringDiv.classList.add('hidden');
+                uiLayer.classList.remove('mode-buttons'); uiLayer.classList.add('mode-gyro'); 
+                steeringDiv.classList.add('hidden');
+                calibrateBtn.classList.remove('hidden');
                 enableGyro();
             }
         }
 
         document.getElementById('settings-btn').addEventListener('click', () => modal.classList.remove('modal-hidden'));
-        document.getElementById('close-btn').addEventListener('click', () => modal.classList.add('modal-hidden'));
+        
+        // AL CERRAR/JUGAR CALIBRAMOS
+        document.getElementById('close-btn').addEventListener('click', () => {
+            modal.classList.add('modal-hidden');
+            calibrateGyro();
+        });
+        
         document.getElementById('opt-buttons').addEventListener('click', () => setControlMode('buttons'));
         document.getElementById('opt-gyro').addEventListener('click', () => setControlMode('gyro'));
         document.getElementById('camera-btn').addEventListener('click', () => state.cameraMode = (state.cameraMode === 'chase') ? 'cockpit' : 'chase');
@@ -149,6 +167,17 @@
             }
         });
 
+        document.getElementById('calibrate-btn').addEventListener('click', calibrateGyro);
+
+        function calibrateGyro() {
+            if(state.controlMode === 'gyro') {
+                state.gyroOffset = state.rawGyro; // Guardamos la posición actual como 0
+                // Pequeño feedback visual
+                calibrateBtn.style.background = "#0f0";
+                setTimeout(() => calibrateBtn.style.background = "rgba(0, 100, 200, 0.5)", 200);
+            }
+        }
+
         function enableGyro() {
             if (state.gyroEnabled) return;
             if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
@@ -156,17 +185,13 @@
             } else { state.gyroEnabled = true; }
         }
 
-        // --- LOGICA DE GIROSCOPIO MEJORADA ---
+        // --- SENSOR LOGIC ---
         window.addEventListener('deviceorientation', (e) => {
-            // Detectamos orientación de pantalla para saber qué eje usar
             const isLandscape = window.innerWidth > window.innerHeight;
-            
             if (isLandscape) {
-                // En horizontal, el eje Beta suele ser el giro de volante
-                if(e.beta !== null) state.gyroVal = e.beta;
+                if(e.beta !== null) state.rawGyro = e.beta;
             } else {
-                // En vertical (o si el navegador no rota ejes), Gamma
-                if(e.gamma !== null) state.gyroVal = e.gamma;
+                if(e.gamma !== null) state.rawGyro = e.gamma;
             }
         });
 
@@ -205,7 +230,9 @@
         const groundMat = new CANNON.Material('ground');
         const wheelMat = new CANNON.Material('wheel');
         const wheelContact = new CANNON.ContactMaterial(wheelMat, groundMat, {
-            friction: 2.5, restitution: 0, contactEquationStiffness: 1000
+            friction: 3.5, // Mayor fricción para mejor giro
+            restitution: 0, 
+            contactEquationStiffness: 1000
         });
         world.addContactMaterial(wheelContact);
 
@@ -230,7 +257,6 @@
         chassisBody.linearDamping = 0.05;
         chassisBody.allowSleep = false;
         
-        // Visual
         const carMesh = new THREE.Group();
         const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff1100, roughness: 0.3, metalness: 0.1 });
         const bodyM = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 4.4), bodyMat);
@@ -261,7 +287,7 @@
             directionLocal: new CANNON.Vec3(0,-1,0),
             suspensionStiffness: 70, 
             suspensionRestLength: 0.45, 
-            frictionSlip: 4,
+            frictionSlip: 5,
             dampingRelaxation: 2.3,
             dampingCompression: 10.0, 
             maxSuspensionForce: 100000,
@@ -292,15 +318,17 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // Dirección
+            // Dirección y Calibración
             let steerVal = 0;
             if (state.controlMode === 'buttons') {
-                if (input.left) steerVal = 0.5;
-                if (input.right) steerVal = -0.5;
+                if (input.left) steerVal = 0.75;
+                if (input.right) steerVal = -0.75;
             } else if (state.controlMode === 'gyro' && state.gyroEnabled) {
-                // Gyro Sensitivity
-                let clamp = Math.max(-30, Math.min(30, state.gyroVal));
-                steerVal = -(clamp / 30) * 0.6;
+                // RESTAMOS EL OFFSET para calibrar
+                let calibratedInput = state.rawGyro - state.gyroOffset;
+                let clamp = Math.max(-35, Math.min(35, calibratedInput));
+                // Aumentado a 0.75 para giro más cerrado
+                steerVal = -(clamp / 35) * 0.75; 
             }
             wheelVis.rotation.z = -steerVal * 2; 
 
@@ -316,7 +344,7 @@
             vehicle.applyEngineForce(-input.gas * force, 2);
             vehicle.applyEngineForce(-input.gas * force, 3);
             
-            // FRENOS
+            // Frenos
             const brakeForce = 100;
             vehicle.setBrake(input.brake * (brakeForce * 0.5), 0);
             vehicle.setBrake(input.brake * (brakeForce * 0.5), 1);
@@ -336,14 +364,13 @@
                 wheelMeshes[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion);
             }
 
-            // CÁMARA FIX
+            // CÁMARA FIXED (Cockpit adelantada)
             if (state.cameraMode === 'chase') {
                 const offset = new THREE.Vector3(0, 3.0, -7.5).applyMatrix4(carMesh.matrixWorld);
                 camera.position.lerp(offset, 0.1);
                 camera.lookAt(carMesh.position.x, carMesh.position.y+0.5, carMesh.position.z);
             } else {
-                // COCKPIT VIEW FIXED (Adelantada y subida para no ver negro)
-                // Estaba en 0.2 (z), la he movido a 0.5 (más adelante) y 0.95 (más arriba)
+                // Cockpit View: Más arriba y adelante para no ver negro
                 const offset = new THREE.Vector3(0, 0.95, 0.5).applyMatrix4(carMesh.matrixWorld);
                 camera.position.copy(offset);
                 const lookTarget = new THREE.Vector3(0, 0.8, 10).applyMatrix4(carMesh.matrixWorld);
