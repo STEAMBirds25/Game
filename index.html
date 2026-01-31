@@ -3,16 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1 Mobile Debug</title>
+    <title>F1 Mobile Pro Pedals</title>
     
-    <!-- 1. DETECTOR DE ERRORES (Para saber qué pasa en el móvil) -->
-    <script>
-        window.onerror = function(message, source, lineno, colno, error) {
-            alert("ERROR JS:\n" + message + "\nLínea: " + lineno);
-        };
-    </script>
-
-    <!-- 2. IMPORT MAP (Librerías) -->
     <script type="importmap">
         {
             "imports": {
@@ -24,273 +16,343 @@
     </script>
 
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
-        
-        /* Aseguramos que la UI esté POR ENCIMA del Canvas 3D */
-        canvas { position: fixed; top: 0; left: 0; z-index: 1; }
-        
-        #ui-layer { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            pointer-events: none; /* Deja pasar clicks al juego */
-            z-index: 100; /* Capa muy alta */
+        body { 
+            margin: 0; overflow: hidden; background: #111; 
+            font-family: 'Segoe UI', sans-serif; 
+            touch-action: none; /* Vital para que funcionen los botones */
+            user-select: none; -webkit-user-select: none;
         }
 
+        /* CAPAS */
+        #game-layer { position: absolute; top: 0; left: 0; z-index: 1; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
+
+        /* HUD */
         #speedometer {
-            position: absolute; bottom: 20px; right: 20px;
-            background: rgba(0,0,0,0.7); color: white;
-            padding: 10px 20px; border-radius: 10px; border-bottom: 4px solid red;
-            font-size: 24px; font-weight: bold;
+            position: absolute; top: 20px; right: 20px;
+            color: #0ff; font-family: monospace; font-size: 30px; font-weight: bold;
+            text-shadow: 0 0 5px #0ff;
         }
-        
         #settings-btn {
-            position: absolute; top: 10px; left: 10px;
-            pointer-events: auto; /* Activar clicks */
-            font-size: 30px; background: #222; border: 1px solid #555; 
-            color: white; border-radius: 5px; cursor: pointer; padding: 5px 10px;
-            z-index: 101;
+            position: absolute; top: 20px; left: 20px;
+            font-size: 30px; background: none; border: none; cursor: pointer; pointer-events: auto;
         }
 
-        /* Modal */
-        #settings-modal {
-            position: absolute; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.9); z-index: 200;
-            display: flex; justify-content: center; align-items: center; 
-            pointer-events: auto;
+        /* ESTILO DE LOS PEDALES REALISTAS */
+        .pedal-container {
+            position: absolute;
+            bottom: 20px;
+            pointer-events: auto; /* Permitir tocar */
+            display: flex; flex-direction: column; align-items: center;
         }
-        .modal-content {
-            background: #222; color: #fff; padding: 20px; border-radius: 10px; width: 80%;
+        
+        /* Diseño base del pedal */
+        .pedal {
+            background: linear-gradient(to bottom, #444, #222);
+            border: 2px solid #666;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            /* Textura de rayas */
+            background-image: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 10px,
+                #111 10px,
+                #111 12px
+            );
+            transition: transform 0.1s, border-color 0.1s;
+        }
+        
+        /* Efecto al presionar */
+        .pedal:active, .pedal.active {
+            transform: scale(0.95) translateY(5px);
+            border-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.8);
+        }
+
+        /* ACELERADOR (Derecha, Largo vertical) */
+        #gas-container { right: 30px; bottom: 30px; }
+        #gas-pedal {
+            width: 70px; height: 160px; /* Largo */
+            border-bottom: 5px solid #00aa00; /* Borde verde abajo */
+        }
+        #gas-pedal.active { background-color: #003300; }
+
+        /* FRENO (Centro-Izquierda, Ancho horizontal) */
+        #brake-container { left: 35%; bottom: 30px; }
+        #brake-pedal {
+            width: 100px; height: 80px; /* Ancho */
+            border-bottom: 5px solid #aa0000; /* Borde rojo abajo */
+        }
+        #brake-pedal.active { background-color: #330000; }
+
+        /* Texto etiquetas */
+        .label { color: #aaa; margin-top: 5px; font-weight: bold; font-size: 14px; text-transform: uppercase; }
+
+        /* Modal Config */
+        #modal {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.9); z-index: 200;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .modal-content { background: #222; padding: 20px; border-radius: 10px; color: white; text-align: center; }
+        button.action-btn { 
+            background: #c00; color: white; border: none; padding: 15px 30px; 
+            font-size: 18px; margin-top: 20px; border-radius: 5px; width: 100%;
         }
         .hidden { display: none !important; }
-        
-        /* Botones grandes para dedos */
-        button { font-size: 18px; padding: 10px; margin-top: 10px; width: 100%; }
 
-        /* Controles Táctiles */
-        #touch-controls {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            pointer-events: none; z-index: 150;
-        }
-        .d-pad { position: absolute; bottom: 40px; left: 30px; display: flex; gap: 20px; pointer-events: auto; }
-        .pedals { position: absolute; bottom: 40px; right: 30px; display: flex; gap: 20px; pointer-events: auto; }
-        
-        .touch-btn {
-            width: 80px; height: 80px; border-radius: 50%;
-            background: rgba(255,255,255,0.2); color: white; font-size: 30px;
-            border: 2px solid white; display: flex; justify-content: center; align-items: center;
-        }
-        .touch-btn:active { background: white; color: black; }
-        .gas-btn { border-color: lime; background: rgba(0,255,0,0.2); }
-        .brake-btn { border-color: red; background: rgba(255,0,0,0.2); }
     </style>
 </head>
 <body>
 
+    <!-- UI -->
     <div id="ui-layer">
-        <div id="speedometer"><span id="speed-val">0</span> km/h</div>
+        <div id="speedometer">0 <span style="font-size:16px">KM/H</span></div>
         <button id="settings-btn">⚙️</button>
+
+        <!-- PEDAL FRENO (Izquierda/Medio) -->
+        <div id="brake-container" class="pedal-container">
+            <div id="brake-pedal" class="pedal"></div>
+            <div class="label">Freno</div>
+        </div>
+
+        <!-- PEDAL ACELERADOR (Derecha) -->
+        <div id="gas-container" class="pedal-container">
+            <div id="gas-pedal" class="pedal"></div>
+            <div class="label">Gas</div>
+        </div>
     </div>
 
-    <div id="settings-modal" class="hidden">
+    <!-- CONFIGURACIÓN -->
+    <div id="modal" class="hidden">
         <div class="modal-content">
-            <h2>Opciones</h2>
-            <p>Control: <b id="mode-display">Botones</b></p>
-            <button id="toggle-mode">Cambiar a Giroscopio</button>
-            <button id="close-settings" style="background:green">JUGAR</button>
-        </div>
-    </div>
-
-    <div id="touch-controls">
-        <div class="d-pad">
-            <button id="btn-left" class="touch-btn">⬅️</button>
-            <button id="btn-right" class="touch-btn">➡️</button>
-        </div>
-        <div class="pedals">
-            <button id="btn-brake" class="touch-btn brake-btn">🛑</button>
-            <button id="btn-gas" class="touch-btn gas-btn">🚀</button>
+            <h2>Configuración</h2>
+            <p>Control: <b>Giroscopio Activado</b></p>
+            <p style="font-size:12px; color:#aaa">Inclina el móvil para girar.</p>
+            <button id="gyro-btn" class="action-btn">Calibrar / Activar Giroscopio</button>
+            <button id="close-btn" class="action-btn" style="background:#444">Cerrar</button>
         </div>
     </div>
 
     <script type="module">
-        // Importamos librerías
         import * as THREE from 'three';
         import * as CANNON from 'cannon-es';
 
-        // --- 1. LÓGICA DE INTERFAZ (Se ejecuta primero) ---
-        const modal = document.getElementById('settings-modal');
-        const settingsBtn = document.getElementById('settings-btn');
-        const closeBtn = document.getElementById('close-settings');
-        const toggleBtn = document.getElementById('toggle-mode');
-        const dpad = document.querySelector('.d-pad');
-        const modeDisplay = document.getElementById('mode-display');
-
-        let useGyro = false;
+        // --- 1. GESTOR DE INPUTS ROBUSTO ---
+        const input = { gas: 0, brake: 0, steer: 0 };
+        let gyro = 0;
         let gyroEnabled = false;
 
-        settingsBtn.addEventListener('click', () => modal.classList.remove('hidden'));
-        closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
-        
-        toggleBtn.addEventListener('click', () => {
-            useGyro = !useGyro;
-            modeDisplay.innerText = useGyro ? "Giroscopio" : "Botones";
-            dpad.style.display = useGyro ? 'none' : 'flex';
+        // Función para asignar eventos táctiles a los pedales
+        function setupPedal(id, type) {
+            const el = document.getElementById(id);
             
-            if(useGyro && !gyroEnabled) {
-                // Pedir permiso iOS
-                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                    DeviceOrientationEvent.requestPermission()
-                        .then(res => { if(res==='granted') gyroEnabled=true; })
-                        .catch(alert);
-                } else {
-                    gyroEnabled = true;
-                }
+            // Touch Start (Dedo toca)
+            el.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Evita scroll/zoom
+                input[type] = 1;
+                el.classList.add('active'); // Efecto visual
+            }, { passive: false });
+
+            // Touch End (Dedo levanta)
+            el.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                input[type] = 0;
+                el.classList.remove('active');
+            }, { passive: false });
+
+            // Soporte Mouse (PC Debug)
+            el.addEventListener('mousedown', () => { input[type] = 1; el.classList.add('active'); });
+            el.addEventListener('mouseup', () => { input[type] = 0; el.classList.remove('active'); });
+            el.addEventListener('mouseleave', () => { input[type] = 0; el.classList.remove('active'); });
+        }
+
+        setupPedal('gas-pedal', 'gas');
+        setupPedal('brake-pedal', 'brake');
+
+        // Giroscopio
+        window.addEventListener('deviceorientation', (e) => {
+            // Gamma es la inclinación lateral (volante)
+            if(e.gamma !== null) gyro = e.gamma;
+        });
+
+        // Config UI
+        const modal = document.getElementById('modal');
+        document.getElementById('settings-btn').addEventListener('click', () => modal.classList.remove('hidden'));
+        document.getElementById('close-btn').addEventListener('click', () => modal.classList.add('hidden'));
+        
+        document.getElementById('gyro-btn').addEventListener('click', () => {
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(response => {
+                        if (response === 'granted') {
+                            gyroEnabled = true;
+                            alert("¡Giroscopio Activado! Inclina el celular.");
+                            modal.classList.add('hidden');
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                gyroEnabled = true; // Android
+                modal.classList.add('hidden');
             }
         });
 
-        // --- 2. INPUTS ---
-        const input = { steer: 0, gas: 0, brake: 0 };
-        const touchState = { left: 0, right: 0 };
-        let orientation = 0;
-
-        // Botones táctiles
-        const bind = (id, k, val) => {
-            const el = document.getElementById(id);
-            el.addEventListener('touchstart', (e)=>{ e.preventDefault(); input[k]=val; });
-            el.addEventListener('touchend', (e)=>{ e.preventDefault(); input[k]=0; });
-            // Para probar en PC con mouse
-            el.addEventListener('mousedown', (e)=>{ input[k]=val; });
-            el.addEventListener('mouseup', (e)=>{ input[k]=0; });
-        };
-        const bindSteer = (id, side) => {
-             const el = document.getElementById(id);
-             el.addEventListener('touchstart', (e)=>{ e.preventDefault(); touchState[side]=1; });
-             el.addEventListener('touchend', (e)=>{ e.preventDefault(); touchState[side]=0; });
-             el.addEventListener('mousedown', (e)=>{ touchState[side]=1; });
-             el.addEventListener('mouseup', (e)=>{ touchState[side]=0; });
-        };
-
-        bind('btn-gas', 'gas', 1);
-        bind('btn-brake', 'brake', 1);
-        bindSteer('btn-left', 'left');
-        bindSteer('btn-right', 'right');
-
-        window.addEventListener('deviceorientation', (e) => orientation = e.gamma);
-
-        // --- 3. JUEGO 3D ---
+        // --- 2. CONFIGURACIÓN DEL MUNDO 3D (Three.js & Cannon) ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB);
-        
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 500);
+        scene.background = new THREE.Color(0x202020);
+        scene.fog = new THREE.Fog(0x202020, 10, 80);
+
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 500);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // Físicas
         const world = new CANNON.World();
         world.gravity.set(0, -9.82, 0);
-        
-        // Suelo
+
+        // Luz
+        const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+        sun.position.set(50, 100, 50);
+        sun.castShadow = true;
+        scene.add(sun);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+        // Suelo (Grid infinito visual)
         const groundBody = new CANNON.Body({ mass: 0, shape: new CANNON.Plane() });
         groundBody.quaternion.setFromEuler(-Math.PI/2, 0, 0);
         world.addBody(groundBody);
-        
-        const grid = new THREE.GridHelper(500, 50, 0xffffff, 0x555555);
+
+        const grid = new THREE.GridHelper(500, 100, 0x555555, 0x222222);
         scene.add(grid);
 
-        // Coche
+        // --- 3. COCHE TIPO FÓRMULA ---
         const chassisBody = new CANNON.Body({ mass: 150 });
-        chassisBody.addShape(new CANNON.Box(new CANNON.Vec3(0.8, 0.4, 2)), new CANNON.Vec3(0,0.5,0));
-        chassisBody.position.set(0, 4, 0);
-        chassisBody.angularDamping = 0.5;
+        chassisBody.addShape(new CANNON.Box(new CANNON.Vec3(0.7, 0.3, 2)), new CANNON.Vec3(0,0.5,0)); // Cuerpo
+        chassisBody.position.set(0, 2, 0);
+        chassisBody.angularDamping = 0.9; // Estabilidad
+
+        // Visual del coche (Grupo)
+        const carMesh = new THREE.Group();
         
-        const carMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.8, 4), new THREE.MeshNormalMaterial());
+        // Cuerpo principal
+        const bodyGeo = new THREE.BoxGeometry(1.4, 0.6, 4);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xdc0000, roughness: 0.4 });
+        const bodyM = new THREE.Mesh(bodyGeo, bodyMat);
+        bodyM.position.y = 0.5; bodyM.castShadow = true;
+        carMesh.add(bodyM);
+
+        // Alerón
+        const wingGeo = new THREE.BoxGeometry(1.4, 0.1, 0.6);
+        const wing = new THREE.Mesh(wingGeo, new THREE.MeshStandardMaterial({color: 0x111111}));
+        wing.position.set(0, 0.9, -1.8);
+        carMesh.add(wing);
+
+        // Cabina
+        const cockpit = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 1), new THREE.MeshStandardMaterial({color:0x111111}));
+        cockpit.position.set(0, 0.8, 0.2);
+        carMesh.add(cockpit);
+
         scene.add(carMesh);
 
+        // Sistema de Vehículo
         const vehicle = new CANNON.RaycastVehicle({
             chassisBody: chassisBody,
             indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2
         });
 
         const wheelOpts = {
-            radius: 0.4, directionLocal: new CANNON.Vec3(0,-1,0),
-            suspensionStiffness: 30, suspensionRestLength: 0.3,
-            frictionSlip: 5, dampingRelaxation: 2.3, dampingCompression: 4.4,
+            radius: 0.35, directionLocal: new CANNON.Vec3(0,-1,0),
+            suspensionStiffness: 40, suspensionRestLength: 0.3,
+            frictionSlip: 3, dampingRelaxation: 2.3, dampingCompression: 4.4,
             maxSuspensionForce: 100000, axleLocal: new CANNON.Vec3(-1,0,0),
             chassisConnectionPointLocal: new CANNON.Vec3(1,1,0),
             maxSuspensionTravel: 0.3, useCustomSlidingRotationalSpeed: true,
             customSlidingRotationalSpeed: -30
         };
 
-        // Ruedas
-        wheelOpts.chassisConnectionPointLocal.set(1, 0, 1.5); vehicle.addWheel(wheelOpts);
-        wheelOpts.chassisConnectionPointLocal.set(-1, 0, 1.5); vehicle.addWheel(wheelOpts);
-        wheelOpts.chassisConnectionPointLocal.set(1, 0, -1.5); vehicle.addWheel(wheelOpts);
-        wheelOpts.chassisConnectionPointLocal.set(-1, 0, -1.5); vehicle.addWheel(wheelOpts);
+        // Añadir ruedas
+        wheelOpts.chassisConnectionPointLocal.set(0.9, 0, 1.4); vehicle.addWheel(wheelOpts);
+        wheelOpts.chassisConnectionPointLocal.set(-0.9, 0, 1.4); vehicle.addWheel(wheelOpts);
+        wheelOpts.chassisConnectionPointLocal.set(0.9, 0, -1.4); vehicle.addWheel(wheelOpts);
+        wheelOpts.chassisConnectionPointLocal.set(-0.9, 0, -1.4); vehicle.addWheel(wheelOpts);
 
         vehicle.addToWorld(world);
 
         // Visual Ruedas
         const wheelMeshes = [];
-        const wGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.5, 20);
+        const wGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.5, 32);
         wGeo.rotateZ(Math.PI/2);
-        const wMat = new THREE.MeshBasicMaterial({ color: 0x333333 });
-        
+        const wMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
         for(let i=0; i<4; i++){
             const m = new THREE.Mesh(wGeo, wMat);
+            m.castShadow = true;
             scene.add(m);
             wheelMeshes.push(m);
         }
 
-        // Bucle
+        // --- 4. BUCLE DE JUEGO ---
         function animate() {
             requestAnimationFrame(animate);
 
-            // Control
-            let steerVal = 0;
-            if (useGyro && gyroEnabled) {
-                steerVal = -(Math.max(-30, Math.min(30, orientation))/30) * 0.5;
-            } else {
-                if(touchState.left) steerVal = 0.5;
-                if(touchState.right) steerVal = -0.5;
+            // Calcular input del volante (Gyro)
+            // Limitamos inclinación entre -30 y 30 grados
+            let steerInput = 0;
+            if (gyroEnabled) {
+                let clampedGyro = Math.max(-30, Math.min(30, gyro));
+                steerInput = -(clampedGyro / 30) * 0.6; // 0.6 es el radio de giro máximo
             }
 
-            vehicle.applyEngineForce(-input.gas * 1000, 2);
-            vehicle.applyEngineForce(-input.gas * 1000, 3);
-            vehicle.setBrake(input.brake * 100, 0);
-            vehicle.setBrake(input.brake * 100, 1);
-            vehicle.setBrake(input.brake * 100, 2);
-            vehicle.setBrake(input.brake * 100, 3);
-            vehicle.setSteeringValue(steerVal, 0);
-            vehicle.setSteeringValue(steerVal, 1);
+            // Aplicar Físicas
+            const engineForce = 1500;
+            const brakeForce = 200;
+
+            // Tracción trasera (Ruedas 2 y 3)
+            vehicle.applyEngineForce(-input.gas * engineForce, 2);
+            vehicle.applyEngineForce(-input.gas * engineForce, 3);
+            
+            // Frenos (4 ruedas)
+            for(let i=0; i<4; i++) {
+                vehicle.setBrake(input.brake * brakeForce, i);
+            }
+
+            // Dirección (Ruedas 0 y 1)
+            vehicle.setSteeringValue(steerInput, 0);
+            vehicle.setSteeringValue(steerInput, 1);
 
             world.fixedStep();
 
-            // Sync Visual
+            // Sincronizar gráficos
             carMesh.position.copy(chassisBody.position);
             carMesh.quaternion.copy(chassisBody.quaternion);
-            
+
             for(let i=0; i<4; i++){
                 vehicle.updateWheelTransform(i);
                 wheelMeshes[i].position.copy(vehicle.wheelInfos[i].worldTransform.position);
                 wheelMeshes[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion);
             }
 
-            // Cámara
-            const camOff = new THREE.Vector3(0, 4, -8).applyMatrix4(carMesh.matrixWorld);
-            camera.position.lerp(camOff, 0.1);
-            camera.lookAt(carMesh.position);
+            // Cámara "Persecución"
+            const camOffset = new THREE.Vector3(0, 3.5, -7).applyMatrix4(carMesh.matrixWorld);
+            camera.position.lerp(camOffset, 0.1);
+            camera.lookAt(carMesh.position.x, carMesh.position.y + 1, carMesh.position.z);
 
-            document.getElementById('speed-val').innerText = Math.floor(chassisBody.velocity.length()*3.6);
+            // UI Speed
+            const kmh = Math.floor(chassisBody.velocity.length() * 3.6);
+            document.getElementById('speedometer').innerHTML = kmh + ' <span style="font-size:16px">KM/H</span>';
+
             renderer.render(scene, camera);
         }
 
         animate();
-        
-        window.addEventListener('resize', () => {
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            camera.aspect = window.innerWidth/window.innerHeight;
-            camera.updateProjectionMatrix();
-        });
 
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
