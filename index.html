@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1: Stable Cockpit</title>
+    <title>F1: Final Fixed Cockpit + Rear View</title>
 
     <script type="importmap">
         {
@@ -28,7 +28,10 @@
         #settings-btn { left: 20px; }
         #camera-btn { left: 80px; }
         #reset-btn { left: 140px; background: rgba(200, 0, 0, 0.5); }
-        #calibrate-btn { left: 200px; background: rgba(0, 100, 200, 0.5); font-size: 18px; }
+        /* Botón Mirar Atrás */
+        #lookback-btn { left: 200px; background: rgba(255, 165, 0, 0.5); } 
+        
+        #calibrate-btn { left: 260px; background: rgba(0, 100, 200, 0.5); font-size: 18px; }
 
         #speed-box {
             position: absolute; top: 20px; right: 20px; text-align: right; color: #0ff; text-shadow: 0 0 5px #0ff; font-family: monospace;
@@ -112,6 +115,7 @@
         <button id="settings-btn" class="top-btn">⚙️</button>
         <button id="camera-btn" class="top-btn">🎥</button>
         <button id="reset-btn" class="top-btn">🔄</button>
+        <button id="lookback-btn" class="top-btn">👁️</button>
         <button id="calibrate-btn" class="top-btn hidden">🎯</button>
 
         <div id="steering-zone" class="touch-control">
@@ -146,7 +150,8 @@
         const controls = {
             gasTouch: 0, gasKey: 0, gasPad: 0,
             brakeTouch: 0, brakeKey: 0, brakePad: 0,
-            steerTouch: 0, steerKey: 0, steerMouse: 0, steerPad: 0
+            steerTouch: 0, steerKey: 0, steerMouse: 0, steerPad: 0,
+            lookBack: false // Nuevo estado para mirar atrás
         };
         
         const state = { 
@@ -163,6 +168,7 @@
         const steerIndicator = document.getElementById('steer-indicator');
         const calibrateBtn = document.getElementById('calibrate-btn');
         const notifyEl = document.getElementById('input-notify');
+        const lookBackBtn = document.getElementById('lookback-btn');
 
         // --- NOTIFICACIONES & INPUT AUTO ---
         let notifyTimer;
@@ -200,19 +206,22 @@
                 controls.steerPad = (Math.abs(rawSteer) > 0.1) ? -rawSteer : 0;
 
                 // Gas
-                const btnGas = gp.buttons[7];
+                const btnGas = gp.buttons[7]; // R2
                 const btnA = gp.buttons[0];
                 if (btnGas && typeof btnGas === 'object' && btnGas.value > 0.1) controls.gasPad = btnGas.value;
                 else if (btnA && btnA.pressed) controls.gasPad = 1;
                 else controls.gasPad = 0;
 
                 // Freno
-                const btnBrake = gp.buttons[6];
+                const btnBrake = gp.buttons[6]; // L2
                 const btnB = gp.buttons[1];
                 const btnX = gp.buttons[2];
                 if (btnBrake && typeof btnBrake === 'object' && btnBrake.value > 0.1) controls.brakePad = btnBrake.value;
                 else if ((btnB && btnB.pressed) || (btnX && btnX.pressed)) controls.brakePad = 1;
                 else controls.brakePad = 0;
+
+                // Mirar Atrás (L1 / LB / Botón 4)
+                controls.lookBack = gp.buttons[4]?.pressed || false;
 
                 if (gp.buttons[3].pressed) toggleCameraDebounce();
                 if (gp.buttons[8].pressed || gp.buttons[9].pressed) resetCar();
@@ -230,7 +239,7 @@
         // --- TECLADO ---
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
-            const gameKeys = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'c', 'r', ' '];
+            const gameKeys = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'c', 'r', ' ', 'b'];
             
             if (gameKeys.includes(key)) {
                 if (!uiLayer.classList.contains('ui-hidden')) {
@@ -245,6 +254,7 @@
             if (key === 'd' || key === 'arrowright') controls.steerKey = -1;
             if (key === 'c') state.cameraMode = (state.cameraMode === 'chase') ? 'cockpit' : 'chase';
             if (key === 'r') resetCar();
+            if (key === 'b') controls.lookBack = true;
         });
 
         window.addEventListener('keyup', (e) => {
@@ -252,7 +262,15 @@
             if (key === 'w' || key === 'arrowup') { controls.gasKey = 0; document.getElementById('gas-pedal').classList.remove('pressed'); }
             if (key === 's' || key === 'arrowdown') { controls.brakeKey = 0; document.getElementById('brake-pedal').classList.remove('pressed'); }
             if (key === 'a' || key === 'arrowleft' || key === 'd' || key === 'arrowright') controls.steerKey = 0;
+            if (key === 'b') controls.lookBack = false;
         });
+
+        // Eventos botón Mirar Atrás Táctil/Mouse
+        lookBackBtn.addEventListener('mousedown', () => controls.lookBack = true);
+        lookBackBtn.addEventListener('mouseup', () => controls.lookBack = false);
+        lookBackBtn.addEventListener('mouseleave', () => controls.lookBack = false);
+        lookBackBtn.addEventListener('touchstart', (e) => { e.preventDefault(); controls.lookBack = true; });
+        lookBackBtn.addEventListener('touchend', (e) => { e.preventDefault(); controls.lookBack = false; });
 
         window.addEventListener('touchstart', (e) => {
             if (!e.target.closest('.top-btn') && !e.target.closest('.modal-content')) {
@@ -446,6 +464,9 @@
             wheelMeshes.push(m);
         }
 
+        // Variable para ayudar en la rotación
+        const dummy = new THREE.Object3D();
+
         function animate() {
             requestAnimationFrame(animate);
             pollGamepads();
@@ -494,20 +515,34 @@
                 wheelMeshes[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion);
             }
 
-            // 3. CAMARA Y ARREGLO ESTABILIDAD
+            // 3. CAMARA LÓGICA
+            // Definir offset base según modo
+            let targetOffset;
             if (state.cameraMode === 'chase') {
-                const offset = new THREE.Vector3(0, 2.5, -5.5).applyMatrix4(carMesh.matrixWorld);
-                camera.position.lerp(offset, 0.15);
-                camera.lookAt(carMesh.position.x, carMesh.position.y+0.5, carMesh.position.z);
+                targetOffset = controls.lookBack 
+                    ? new THREE.Vector3(0, 2.5, 6.0)  // Chase Mirar atrás (delante del coche)
+                    : new THREE.Vector3(0, 2.5, -5.5); // Chase Normal (detrás del coche)
+                
+                const worldPos = targetOffset.applyMatrix4(carMesh.matrixWorld);
+                camera.position.lerp(worldPos, 0.15); // Suavizado de posición
+                camera.lookAt(carMesh.position.x, carMesh.position.y + 0.5, carMesh.position.z);
+            
             } else {
-                // COCKPIT CAM FIXED
-                // Posición: 0.35 en Z para salir del respaldo del asiento y evitar clipping (traslape)
+                // COCKPIT CAM FIXED & FLIPPED
                 const cockpitOffset = new THREE.Vector3(0, 0.7, 0.35).applyMatrix4(carMesh.matrixWorld);
                 camera.position.copy(cockpitOffset);
+
+                // Rotación suave del coche
+                dummy.quaternion.copy(carMesh.quaternion);
                 
-                // Rotación: Usamos slerp (0.2) para filtrar la vibración de las físicas
-                // Esto elimina el sacudido manteniendo la vista sincronizada
-                camera.quaternion.slerp(carMesh.quaternion, 0.2);
+                // Si miramos atrás en cockpit, rotamos 0 grados (porque la cámara base está invertida)
+                // Si miramos normal, rotamos 180 (Math.PI) para corregir la vista "al revés"
+                if (!controls.lookBack) {
+                    dummy.rotateY(Math.PI); 
+                }
+                
+                // Aplicamos slerp para evitar temblores
+                camera.quaternion.slerp(dummy.quaternion, 0.2);
             }
 
             document.getElementById('speed-val').innerText = Math.floor(speed*3.6);
