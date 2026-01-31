@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1 Mobile: Stable & Reset</title>
+    <title>F1 Mobile: Cockpit & Gyro Fixed</title>
 
     <script type="importmap">
         {
@@ -20,7 +20,6 @@
         
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
         
-        /* BOTONES SUPERIORES */
         .top-btn {
             position: absolute; top: 20px; font-size: 24px; background: rgba(0,0,0,0.5); color: white;
             border: 1px solid #555; border-radius: 8px; width: 50px; height: 50px; cursor: pointer; pointer-events: auto;
@@ -28,7 +27,7 @@
         }
         #settings-btn { left: 20px; }
         #camera-btn { left: 80px; }
-        #reset-btn { left: 140px; background: rgba(200, 0, 0, 0.5); } /* Botón Rojo */
+        #reset-btn { left: 140px; background: rgba(200, 0, 0, 0.5); }
 
         #speed-box {
             position: absolute; top: 20px; right: 20px; text-align: right; color: #0ff; text-shadow: 0 0 5px #0ff; font-family: monospace;
@@ -36,6 +35,7 @@
         #speed-val { font-size: 40px; font-weight: bold; line-height: 1; }
         #gear-val { font-size: 16px; color: #fff; }
 
+        /* PEDALES */
         .pedal {
             position: absolute; bottom: 20px; background: linear-gradient(to bottom, #333, #111);
             border: 2px solid #555; border-radius: 6px; box-shadow: 0 5px 10px rgba(0,0,0,0.5);
@@ -84,7 +84,7 @@
         
         <button id="settings-btn" class="top-btn">⚙️</button>
         <button id="camera-btn" class="top-btn">🎥</button>
-        <button id="reset-btn" class="top-btn">🔄</button> <!-- Botón Reset -->
+        <button id="reset-btn" class="top-btn">🔄</button>
 
         <div id="steering-controls">
             <div id="btn-left" class="steer-btn">⬅️</div>
@@ -101,6 +101,7 @@
             <p>Elige tu estilo:</p>
             <button id="opt-buttons" class="option-btn active-opt">BOTONES TÁCTILES</button>
             <button id="opt-gyro" class="option-btn">GIROSCOPIO (Inclinación)</button>
+            <p style="font-size:12px; color:#aaa; margin-top:10px">Nota: En Gyro, inclina el móvil como volante.</p>
             <button id="close-btn" class="option-btn play-btn">JUGAR</button>
         </div>
     </div>
@@ -139,13 +140,12 @@
         document.getElementById('opt-gyro').addEventListener('click', () => setControlMode('gyro'));
         document.getElementById('camera-btn').addEventListener('click', () => state.cameraMode = (state.cameraMode === 'chase') ? 'cockpit' : 'chase');
         
-        // RESET FUNCTION
         document.getElementById('reset-btn').addEventListener('click', () => {
             if(chassisBody) {
-                chassisBody.position.set(0, 3, 0); // Altura segura
-                chassisBody.quaternion.set(0, 0, 0, 1); // Rotación 0
-                chassisBody.velocity.set(0, 0, 0); // Parar movimiento
-                chassisBody.angularVelocity.set(0, 0, 0); // Parar giros
+                chassisBody.position.set(0, 3, 0); 
+                chassisBody.quaternion.set(0, 0, 0, 1); 
+                chassisBody.velocity.set(0, 0, 0); 
+                chassisBody.angularVelocity.set(0, 0, 0); 
             }
         });
 
@@ -155,7 +155,20 @@
                 DeviceOrientationEvent.requestPermission().then(res => { if (res === 'granted') state.gyroEnabled = true; });
             } else { state.gyroEnabled = true; }
         }
-        window.addEventListener('deviceorientation', (e) => { if(e.gamma) state.gyroVal = e.gamma; });
+
+        // --- LOGICA DE GIROSCOPIO MEJORADA ---
+        window.addEventListener('deviceorientation', (e) => {
+            // Detectamos orientación de pantalla para saber qué eje usar
+            const isLandscape = window.innerWidth > window.innerHeight;
+            
+            if (isLandscape) {
+                // En horizontal, el eje Beta suele ser el giro de volante
+                if(e.beta !== null) state.gyroVal = e.beta;
+            } else {
+                // En vertical (o si el navegador no rota ejes), Gamma
+                if(e.gamma !== null) state.gyroVal = e.gamma;
+            }
+        });
 
         function bindTouch(id, type, val) {
             const el = document.getElementById(id);
@@ -210,7 +223,6 @@
 
         // --- COCHE ---
         const chassisBody = new CANNON.Body({ mass: 300, material: groundMat });
-        // Caja fina para evitar toques
         const chassisShape = new CANNON.Box(new CANNON.Vec3(0.75, 0.15, 2.2));
         chassisBody.addShape(chassisShape, new CANNON.Vec3(0, 0.2, 0)); 
         chassisBody.position.set(0, 2, 0);
@@ -243,15 +255,15 @@
             indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2
         });
 
-        // Configuración Suspensión (ANTI-DIVE)
+        // Configuración Suspensión
         const wOpts = {
             radius: 0.38, 
             directionLocal: new CANNON.Vec3(0,-1,0),
-            suspensionStiffness: 70, // Muy dura
+            suspensionStiffness: 70, 
             suspensionRestLength: 0.45, 
             frictionSlip: 4,
             dampingRelaxation: 2.3,
-            dampingCompression: 10.0, // Alta compresión para evitar hundirse al frenar
+            dampingCompression: 10.0, 
             maxSuspensionForce: 100000,
             axleLocal: new CANNON.Vec3(-1,0,0),
             chassisConnectionPointLocal: new CANNON.Vec3(0,0,0),
@@ -286,6 +298,7 @@
                 if (input.left) steerVal = 0.5;
                 if (input.right) steerVal = -0.5;
             } else if (state.controlMode === 'gyro' && state.gyroEnabled) {
+                // Gyro Sensitivity
                 let clamp = Math.max(-30, Math.min(30, state.gyroVal));
                 steerVal = -(clamp / 30) * 0.6;
             }
@@ -303,12 +316,11 @@
             vehicle.applyEngineForce(-input.gas * force, 2);
             vehicle.applyEngineForce(-input.gas * force, 3);
             
-            // FRENOS (REPARTO Y SUAVIDAD)
-            // Frenamos menos delante (0,1) y más detrás (2,3) para evitar clavar morro
-            const brakeForce = 100; // Fuerza reducida
-            vehicle.setBrake(input.brake * (brakeForce * 0.5), 0); // 50% delante
+            // FRENOS
+            const brakeForce = 100;
+            vehicle.setBrake(input.brake * (brakeForce * 0.5), 0);
             vehicle.setBrake(input.brake * (brakeForce * 0.5), 1);
-            vehicle.setBrake(input.brake * brakeForce, 2); // 100% detrás
+            vehicle.setBrake(input.brake * brakeForce, 2);
             vehicle.setBrake(input.brake * brakeForce, 3);
 
             vehicle.setSteeringValue(steerVal, 0);
@@ -324,14 +336,17 @@
                 wheelMeshes[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion);
             }
 
+            // CÁMARA FIX
             if (state.cameraMode === 'chase') {
                 const offset = new THREE.Vector3(0, 3.0, -7.5).applyMatrix4(carMesh.matrixWorld);
                 camera.position.lerp(offset, 0.1);
                 camera.lookAt(carMesh.position.x, carMesh.position.y+0.5, carMesh.position.z);
             } else {
-                const offset = new THREE.Vector3(0, 0.75, 0.4).applyMatrix4(carMesh.matrixWorld);
+                // COCKPIT VIEW FIXED (Adelantada y subida para no ver negro)
+                // Estaba en 0.2 (z), la he movido a 0.5 (más adelante) y 0.95 (más arriba)
+                const offset = new THREE.Vector3(0, 0.95, 0.5).applyMatrix4(carMesh.matrixWorld);
                 camera.position.copy(offset);
-                const lookTarget = new THREE.Vector3(0, 0.6, 10).applyMatrix4(carMesh.matrixWorld);
+                const lookTarget = new THREE.Vector3(0, 0.8, 10).applyMatrix4(carMesh.matrixWorld);
                 camera.lookAt(lookTarget);
             }
 
