@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1: Final Fixed Version</title>
+    <title>F1: Stable Cockpit</title>
 
     <script type="importmap">
         {
@@ -260,7 +260,6 @@
             }
         }, { passive: true });
 
-
         // --- CONTROLES TÁCTILES ---
         let zoneRect = steerZone.getBoundingClientRect();
         let isDragging = false;
@@ -386,7 +385,7 @@
         const grid = new THREE.GridHelper(500, 100, 0x444444, 0x222222);
         scene.add(grid);
 
-        // --- COCHE & VISUALES ---
+        // --- COCHE ---
         const chassisBody = new CANNON.Body({ mass: 200, material: groundMat }); 
         const chassisShape = new CANNON.Box(new CANNON.Vec3(0.75, 0.15, 2.2));
         chassisBody.addShape(chassisShape, new CANNON.Vec3(0, 0.2, 0)); 
@@ -398,7 +397,6 @@
         const carMesh = new THREE.Group();
         const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff1100, roughness: 0.3, metalness: 0.1 });
         
-        // Elementos que se ocultarán en cockpit
         const bodyM = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 4.4), bodyMat);
         bodyM.position.y = 0.2; bodyM.castShadow = true; carMesh.add(bodyM);
         
@@ -408,7 +406,6 @@
         const wing = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, 0.6), new THREE.MeshStandardMaterial({color:0x111111}));
         wing.position.set(0, 0.7, -1.9); carMesh.add(wing);
 
-        // Elementos visibles siempre (morro y volante)
         const nose = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 1.0), bodyMat);
         nose.position.set(0, 0.3, 2.4); carMesh.add(nose);
         
@@ -497,24 +494,20 @@
                 wheelMeshes[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion);
             }
 
-            // 3. CAMARA Y ARREGLO VISUAL (BUG FIXED)
-            const isCockpit = state.cameraMode === 'cockpit';
-            
-            // Ocultamos la geometría que atraviesa la cámara
-            bodyM.visible = !isCockpit;
-            cockpitM.visible = !isCockpit;
-            wing.visible = !isCockpit; 
-
-            if (!isCockpit) {
-                // Chase Cam
+            // 3. CAMARA Y ARREGLO ESTABILIDAD
+            if (state.cameraMode === 'chase') {
                 const offset = new THREE.Vector3(0, 2.5, -5.5).applyMatrix4(carMesh.matrixWorld);
                 camera.position.lerp(offset, 0.15);
                 camera.lookAt(carMesh.position.x, carMesh.position.y+0.5, carMesh.position.z);
             } else {
-                // Cockpit Cam (Detrás del volante)
-                const cockpitOffset = new THREE.Vector3(0, 0.7, 0.1).applyMatrix4(carMesh.matrixWorld);
+                // COCKPIT CAM FIXED
+                // Posición: 0.35 en Z para salir del respaldo del asiento y evitar clipping (traslape)
+                const cockpitOffset = new THREE.Vector3(0, 0.7, 0.35).applyMatrix4(carMesh.matrixWorld);
                 camera.position.copy(cockpitOffset);
-                camera.quaternion.copy(carMesh.quaternion);
+                
+                // Rotación: Usamos slerp (0.2) para filtrar la vibración de las físicas
+                // Esto elimina el sacudido manteniendo la vista sincronizada
+                camera.quaternion.slerp(carMesh.quaternion, 0.2);
             }
 
             document.getElementById('speed-val').innerText = Math.floor(speed*3.6);
