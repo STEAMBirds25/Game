@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>F1 Web Sim - Cross Platform</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "cannon-es": "https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.js"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <!-- HUD -->
+    <div id="ui-layer">
+        <div id="speedometer">
+            <span id="speed-val">0</span> km/h
+            <div id="gear-val">N</div>
+        </div>
+        <button id="settings-btn">⚙️ Config</button>
+    </div>
+
+    <!-- Menú de Configuración -->
+    <div id="settings-modal" class="hidden">
+        <div class="modal-content">
+            <h2>Configuración</h2>
+            
+            <div class="setting-group">
+                <label>Modo de Control (Móvil):</label>
+                <select id="mobile-control-mode">
+                    <option value="buttons">Botones Táctiles</option>
+                    <option value="gyro">Giroscopio (Inclinar)</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label>Sensibilidad Dirección:</label>
+                <input type="range" id="sensitivity-slider" min="0.1" max="2.0" step="0.1" value="1.0">
+            </div>
+
+            <div class="setting-group">
+                <p><i>PC: Teclado (WASD) o Volante USB detectado autom.</i></p>
+                <button id="calibrate-gyro">Calibrar / Activar Giroscopio (iOS)</button>
+            </div>
+
+            <button id="close-settings">Guardar y Cerrar</button>
+        </div>
+    </div>
+
+    <!-- Controles Táctiles (Overlay) -->
+    <div id="touch-controls" class="hidden">
+        <div class="d-pad">
+            <button id="btn-left" class="touch-btn">⬅️</button>
+            <button id="btn-right" class="touch-btn">➡️</button>
+        </div>
+        <div class="pedals">
+            <button id="btn-brake" class="touch-btn brake-btn">🛑</button>
+            <button id="btn-gas" class="touch-btn gas-btn">🚀</button>
+        </div>
+    </div>
+
+    <script type="module" src="./js/main.js"></script>
+</body>
+</html>

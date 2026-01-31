@@ -1,0 +1,50 @@
+body { margin: 0; overflow: hidden; background: #111; font-family: 'Segoe UI', sans-serif; user-select: none; -webkit-user-select: none; }
+
+#ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+
+#speedometer {
+    position: absolute; bottom: 20px; right: 20px;
+    background: rgba(0,0,0,0.7); color: white;
+    padding: 10px 20px; border-radius: 10px; border-bottom: 4px solid red;
+    font-size: 24px; font-weight: bold; text-align: right;
+}
+#gear-val { font-size: 40px; color: yellow; line-height: 1; }
+
+#settings-btn {
+    position: absolute; top: 10px; left: 10px;
+    pointer-events: auto; font-size: 20px; background: none; border: none; cursor: pointer;
+}
+
+/* Modal */
+#settings-modal {
+    position: absolute; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.85); z-index: 100;
+    display: flex; justify-content: center; align-items: center; pointer-events: auto;
+}
+.modal-content {
+    background: #222; color: #fff; padding: 20px; border-radius: 8px; width: 300px;
+}
+.setting-group { margin-bottom: 15px; }
+select, button, input { width: 100%; padding: 10px; margin-top: 5px; font-size: 16px; }
+.hidden { display: none !important; }
+
+/* Controles Táctiles */
+#touch-controls {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; /* Dejar pasar eventos salvo en los botones */
+}
+
+.d-pad { position: absolute; bottom: 30px; left: 30px; display: flex; gap: 20px; pointer-events: auto; }
+.pedals { position: absolute; bottom: 30px; right: 30px; display: flex; gap: 20px; pointer-events: auto; }
+
+.touch-btn {
+    width: 80px; height: 80px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.1); color: white; font-size: 30px;
+    backdrop-filter: blur(5px);
+    display: flex; justify-content: center; align-items: center;
+    touch-action: none; /* Prevenir zoom/scroll */
+}
+.touch-btn:active { background: rgba(255,255,255,0.3); transform: scale(0.95); }
+.gas-btn { background: rgba(0, 255, 0, 0.2); border-color: lime; }
+.brake-btn { background: rgba(255, 0, 0, 0.2); border-color: red; }
