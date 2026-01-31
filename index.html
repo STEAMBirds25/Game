@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1: Universal Controls Fixed</title>
+    <title>F1: Universal + Auto-Switch Input</title>
 
     <script type="importmap">
         {
@@ -20,6 +20,7 @@
         
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
         
+        /* BOTONES SUPERIORES (Siempre visibles) */
         .top-btn {
             position: absolute; top: 20px; font-size: 24px; background: rgba(0,0,0,0.5); color: white;
             border: 1px solid #555; border-radius: 8px; width: 50px; height: 50px; cursor: pointer; pointer-events: auto;
@@ -36,15 +37,35 @@
         #speed-val { font-size: 40px; font-weight: bold; line-height: 1; }
         #gear-val { font-size: 16px; color: #fff; }
 
-        /* PEDALES */
+        /* NOTIFICACIÓN SISTEMA INPUT */
+        #input-notify {
+            position: absolute; top: 80px; left: 20px; 
+            background: #fff; color: #000; padding: 8px 15px; 
+            border-radius: 4px; font-weight: bold; font-size: 14px;
+            opacity: 0; transition: opacity 0.5s; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* --- CONTROLES TÁCTILES --- */
+        .touch-control {
+            transition: opacity 0.5s, transform 0.5s;
+            opacity: 1;
+        }
+
+        /* CLASE MÁGICA: Oculta controles cuando se detecta teclado/mando */
+        .ui-hidden .touch-control {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transform: translateY(20px);
+        }
+
         .pedal {
             position: absolute; bottom: 20px; background: linear-gradient(to bottom, #333, #111);
             border: 2px solid #555; border-radius: 6px; box-shadow: 0 5px 10px rgba(0,0,0,0.5);
             pointer-events: auto; display: flex; justify-content: center; align-items: flex-end;
             color: #aaa; font-size: 12px; font-weight: bold; padding-bottom: 8px;
             background-image: repeating-linear-gradient(0deg, transparent, transparent 10px, #000 10px, #000 12px);
-            transition: transform 0.1s, border-color 0.1s; /* Transición rápida para feedback */
-            touch-action: none; /* VITAL PARA MÓVIL */
+            touch-action: none; 
         }
         .pedal:active, .pedal.pressed { transform: scale(0.95) translateY(3px); color: white; border-color: white; }
 
@@ -57,7 +78,6 @@
         .mode-slide #brake-pedal { left: auto; right: 110px; }
         .mode-gyro #brake-pedal { right: auto; left: 30px; }
 
-        /* ZONA SLIDER */
         #steering-zone {
             position: absolute; bottom: 30px; left: 30px;
             width: 240px; height: 80px;
@@ -67,18 +87,15 @@
             pointer-events: auto;
             display: flex; justify-content: space-between; align-items: center;
             padding: 0 10px; box-sizing: border-box;
-            touch-action: none; overflow: hidden; /* VITAL */
+            touch-action: none; overflow: hidden;
         }
-
+        
+        /* Elementos dentro del steering-zone */
         .arrow-vis { font-size: 30px; opacity: 0.5; pointer-events: none; user-select: none; }
-
         #steer-indicator {
-            position: absolute; top: 0; left: 50%;
-            width: 4px; height: 100%;
-            background: rgba(255, 50, 50, 0.8);
-            box-shadow: 0 0 10px red;
-            transform: translateX(-50%);
-            transition: transform 0.05s linear;
+            position: absolute; top: 0; left: 50%; width: 4px; height: 100%;
+            background: rgba(255, 50, 50, 0.8); box-shadow: 0 0 10px red;
+            transform: translateX(-50%); transition: transform 0.05s linear;
         }
         #steering-zone::after {
             content: ''; position: absolute; left: 50%; top: 20%; height: 60%; width: 2px;
@@ -100,22 +117,25 @@
 </head>
 <body>
 
+    <!-- Agregamos clase 'touch-control' a los elementos que queremos ocultar con teclado -->
     <div id="ui-layer" class="mode-slide">
         <div id="speed-box"><div id="speed-val">0</div><div id="gear-val">KM/H</div></div>
+        
+        <div id="input-notify">🎮 Dispositivo detectado</div>
         
         <button id="settings-btn" class="top-btn">⚙️</button>
         <button id="camera-btn" class="top-btn">🎥</button>
         <button id="reset-btn" class="top-btn">🔄</button>
         <button id="calibrate-btn" class="top-btn hidden">🎯</button>
 
-        <div id="steering-zone">
+        <div id="steering-zone" class="touch-control">
             <div id="steer-indicator"></div>
             <div class="arrow-vis">⬅️</div>
             <div class="arrow-vis">➡️</div>
         </div>
 
-        <div id="brake-pedal" class="pedal">FRENO (S)</div>
-        <div id="gas-pedal" class="pedal">GAS (W)</div>
+        <div id="brake-pedal" class="pedal touch-control">FRENO</div>
+        <div id="gas-pedal" class="pedal touch-control">GAS</div>
     </div>
 
     <div id="modal">
@@ -125,8 +145,7 @@
             <button id="opt-slide" class="option-btn active-opt">DESLIZAR (SLIDER)</button>
             <button id="opt-gyro" class="option-btn">GIROSCOPIO</button>
             <p style="font-size:12px; color:#aaa; margin-top:10px">
-                PC: W/S Acelerar/Freno, A/D o Mouse Girar.<br>
-                Móvil: Táctil o Gyro.
+                Conecta Teclado, Mando o Volante para ocultar controles táctiles automáticamente.
             </p>
             <button id="close-btn" class="option-btn play-btn">JUGAR</button>
         </div>
@@ -137,11 +156,10 @@
         import * as CANNON from 'cannon-es';
 
         // --- ESTADO UNIFICADO ---
-        // Separamos las fuentes de input para que no choquen
         const controls = {
-            gasTouch: 0, gasKey: 0,
-            brakeTouch: 0, brakeKey: 0,
-            steerTouch: 0, steerKey: 0, steerMouse: 0
+            gasTouch: 0, gasKey: 0, gasPad: 0,
+            brakeTouch: 0, brakeKey: 0, brakePad: 0,
+            steerTouch: 0, steerKey: 0, steerMouse: 0, steerPad: 0
         };
         
         const state = { 
@@ -157,14 +175,97 @@
         const steerZone = document.getElementById('steering-zone');
         const steerIndicator = document.getElementById('steer-indicator');
         const calibrateBtn = document.getElementById('calibrate-btn');
+        const notifyEl = document.getElementById('input-notify');
 
-        // --- 1. TECLADO (PC) ---
+        // --- SISTEMA DE NOTIFICACIONES E INPUT AUTOMÁTICO ---
+        let notifyTimer;
+        function showNotification(text, icon = "") {
+            notifyEl.innerHTML = `${icon} ${text}`;
+            notifyEl.style.opacity = 1;
+            clearTimeout(notifyTimer);
+            notifyTimer = setTimeout(() => notifyEl.style.opacity = 0, 3000);
+        }
+
+        function setTouchVisibility(visible) {
+            if (visible) {
+                if (uiLayer.classList.contains('ui-hidden')) {
+                    uiLayer.classList.remove('ui-hidden');
+                    // showNotification("Modo Táctil", "👆"); // Opcional: puede ser molesto
+                }
+            } else {
+                if (!uiLayer.classList.contains('ui-hidden')) {
+                    uiLayer.classList.add('ui-hidden');
+                }
+            }
+        }
+
+        // --- 1. GAMEPAD API ---
+        window.addEventListener("gamepadconnected", (e) => {
+            showNotification(`Mando conectado: ${e.gamepad.id.substring(0, 15)}...`, "🎮");
+            setTouchVisibility(false); // Ocultar controles al conectar mando
+        });
+
+        function pollGamepads() {
+            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+            if (!gamepads) return;
+            const gp = gamepads[0];
+            if (gp) {
+                // Si se detecta movimiento en el mando, asegurar que el UI táctil sigue oculto
+                const active = Math.abs(gp.axes[0]) > 0.1 || gp.buttons.some(b => b.pressed);
+                if (active) setTouchVisibility(false);
+
+                // Dirección
+                const rawSteer = gp.axes[0]; 
+                if (Math.abs(rawSteer) > 0.1) controls.steerPad = -rawSteer;
+                else controls.steerPad = 0;
+
+                // Gas (R2/RT o Botón A)
+                const btnGas = gp.buttons[7];
+                const btnA = gp.buttons[0];
+                if (btnGas && typeof btnGas === 'object' && btnGas.value > 0.1) controls.gasPad = btnGas.value;
+                else if (btnA && btnA.pressed) controls.gasPad = 1;
+                else controls.gasPad = 0;
+
+                // Freno (L2/LT o Botón B/X)
+                const btnBrake = gp.buttons[6];
+                const btnB = gp.buttons[1];
+                const btnX = gp.buttons[2];
+                if (btnBrake && typeof btnBrake === 'object' && btnBrake.value > 0.1) controls.brakePad = btnBrake.value;
+                else if ((btnB && btnB.pressed) || (btnX && btnX.pressed)) controls.brakePad = 1;
+                else controls.brakePad = 0;
+
+                if (gp.buttons[3].pressed) toggleCameraDebounce();
+                if (gp.buttons[8].pressed || gp.buttons[9].pressed) resetCar();
+            }
+        }
+
+        let lastCamToggle = 0;
+        function toggleCameraDebounce() {
+            if (Date.now() - lastCamToggle > 500) {
+                state.cameraMode = (state.cameraMode === 'chase') ? 'cockpit' : 'chase';
+                lastCamToggle = Date.now();
+            }
+        }
+
+        // --- 2. TECLADO (PC/Bluetooth) ---
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
+            const gameKeys = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'c', 'r', ' '];
+            
+            // Si pulsa una tecla de juego, ocultamos UI y avisamos si no estaba oculto
+            if (gameKeys.includes(key)) {
+                if (!uiLayer.classList.contains('ui-hidden')) {
+                    showNotification("Teclado Activo", "⌨️");
+                    setTouchVisibility(false);
+                }
+            }
+
             if (key === 'w' || key === 'arrowup') { controls.gasKey = 1; document.getElementById('gas-pedal').classList.add('pressed'); }
             if (key === 's' || key === 'arrowdown') { controls.brakeKey = 1; document.getElementById('brake-pedal').classList.add('pressed'); }
-            if (key === 'a' || key === 'arrowleft') controls.steerKey = 1; // Izquierda positiva en lógica interna
+            if (key === 'a' || key === 'arrowleft') controls.steerKey = 1; 
             if (key === 'd' || key === 'arrowright') controls.steerKey = -1;
+            if (key === 'c') state.cameraMode = (state.cameraMode === 'chase') ? 'cockpit' : 'chase';
+            if (key === 'r') resetCar();
         });
 
         window.addEventListener('keyup', (e) => {
@@ -174,7 +275,17 @@
             if (key === 'a' || key === 'arrowleft' || key === 'd' || key === 'arrowright') controls.steerKey = 0;
         });
 
-        // --- 2. TÁCTIL (MÓVIL) Y MOUSE (PC SLIDER) ---
+        // --- 3. REACTIVAR TÁCTIL ---
+        // Si el usuario toca la pantalla (que no sea un botón específico), asumimos que quiere usar táctil
+        window.addEventListener('touchstart', (e) => {
+            // Verificamos que no sea un botón de menú para evitar parpadeos
+            if (!e.target.closest('.top-btn') && !e.target.closest('.modal-content')) {
+                setTouchVisibility(true);
+            }
+        }, { passive: true });
+
+
+        // --- 4. LÓGICA TÁCTIL (MÓVIL) Y MOUSE ---
         let zoneRect = steerZone.getBoundingClientRect();
         let isDragging = false;
 
@@ -184,54 +295,25 @@
             const range = zoneRect.width / 2;
             let val = delta / range;
             val = Math.max(-1, Math.min(1, val));
-            return -val; // Invertimos: Three/Cannon rotación
+            return -val;
         }
 
         function updateSteerVisual(val) {
-            // val va de -1 (der) a 1 (izq) por la inversión anterior
-            // Para visual, invertimos de nuevo para que coincida con el dedo
             const visualX = -val * (zoneRect.width / 2);
             steerIndicator.style.transform = `translateX(calc(-50% + ${visualX}px))`;
         }
 
-        // TOUCH EVENTS (Exclusivo Móvil)
-        steerZone.addEventListener('touchstart', (e) => { 
-            e.preventDefault(); // IMPORTANTE
-            controls.steerTouch = calcSteerFromX(e.touches[0].clientX);
-            updateSteerVisual(controls.steerTouch);
-        }, {passive: false});
+        // Eventos Touch Slider
+        steerZone.addEventListener('touchstart', (e) => { e.preventDefault(); controls.steerTouch = calcSteerFromX(e.touches[0].clientX); updateSteerVisual(controls.steerTouch); }, {passive: false});
+        steerZone.addEventListener('touchmove', (e) => { e.preventDefault(); controls.steerTouch = calcSteerFromX(e.touches[0].clientX); updateSteerVisual(controls.steerTouch); }, {passive: false});
+        steerZone.addEventListener('touchend', (e) => { e.preventDefault(); controls.steerTouch = 0; updateSteerVisual(0); }, {passive: false});
 
-        steerZone.addEventListener('touchmove', (e) => { 
-            e.preventDefault();
-            controls.steerTouch = calcSteerFromX(e.touches[0].clientX);
-            updateSteerVisual(controls.steerTouch);
-        }, {passive: false});
+        // Eventos Mouse Slider
+        steerZone.addEventListener('mousedown', (e) => { isDragging = true; controls.steerMouse = calcSteerFromX(e.clientX); updateSteerVisual(controls.steerMouse); });
+        window.addEventListener('mousemove', (e) => { if(isDragging) { controls.steerMouse = calcSteerFromX(e.clientX); updateSteerVisual(controls.steerMouse); } });
+        window.addEventListener('mouseup', () => { isDragging = false; controls.steerMouse = 0; if (controls.steerTouch === 0 && controls.steerKey === 0) updateSteerVisual(0); });
 
-        steerZone.addEventListener('touchend', (e) => { 
-            e.preventDefault();
-            controls.steerTouch = 0;
-            updateSteerVisual(0);
-        }, {passive: false});
-
-        // MOUSE EVENTS (Exclusivo PC Slider)
-        steerZone.addEventListener('mousedown', (e) => { 
-            isDragging = true; 
-            controls.steerMouse = calcSteerFromX(e.clientX);
-            updateSteerVisual(controls.steerMouse);
-        });
-        window.addEventListener('mousemove', (e) => { 
-            if(isDragging) {
-                controls.steerMouse = calcSteerFromX(e.clientX);
-                updateSteerVisual(controls.steerMouse);
-            }
-        });
-        window.addEventListener('mouseup', () => { 
-            isDragging = false; 
-            controls.steerMouse = 0;
-            if (controls.steerTouch === 0 && controls.steerKey === 0) updateSteerVisual(0);
-        });
-
-        // PEDALES TÁCTILES
+        // Pedales Táctiles
         function bindTouchPedal(id, type) {
             const el = document.getElementById(id);
             const set = (val) => {
@@ -240,7 +322,6 @@
             };
             el.addEventListener('touchstart', (e) => { e.preventDefault(); set(1); }, {passive: false});
             el.addEventListener('touchend', (e) => { e.preventDefault(); set(0); }, {passive: false});
-            // Click PC
             el.addEventListener('mousedown', () => set(1));
             el.addEventListener('mouseup', () => set(0));
             el.addEventListener('mouseleave', () => set(0));
@@ -250,7 +331,7 @@
 
         window.addEventListener('resize', () => zoneRect = steerZone.getBoundingClientRect());
 
-        // --- MENÚ & GIROSCOPIO ---
+        // --- MENÚ & CONFIG ---
         setControlMode('slide');
         function setControlMode(mode) {
             state.controlMode = mode;
@@ -271,12 +352,14 @@
         document.getElementById('opt-slide').addEventListener('click', () => setControlMode('slide'));
         document.getElementById('opt-gyro').addEventListener('click', () => setControlMode('gyro'));
         document.getElementById('camera-btn').addEventListener('click', () => state.cameraMode = (state.cameraMode === 'chase') ? 'cockpit' : 'chase');
-        document.getElementById('reset-btn').addEventListener('click', () => {
+        
+        function resetCar() {
             if(chassisBody) {
                 chassisBody.position.set(0, 3, 0); chassisBody.quaternion.set(0, 0, 0, 1); 
                 chassisBody.velocity.set(0, 0, 0); chassisBody.angularVelocity.set(0, 0, 0); 
             }
-        });
+        }
+        document.getElementById('reset-btn').addEventListener('click', resetCar);
         document.getElementById('calibrate-btn').addEventListener('click', calibrateGyro);
 
         function calibrateGyro() {
@@ -356,7 +439,9 @@
         nose.position.set(0, 0.3, 2.4); carMesh.add(nose);
         
         const wheelVis = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.02, 8, 16), new THREE.MeshStandardMaterial({color:0x333333}));
-        wheelVis.position.set(0, 0.6, 0.5); carMesh.add(wheelVis);
+        wheelVis.position.set(0, 0.6, 0.5); 
+        wheelVis.rotation.set(0.2, 0, 0);
+        carMesh.add(wheelVis);
 
         scene.add(carMesh);
 
@@ -400,31 +485,32 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // 1. COMBINAR INPUTS
-            // Gas = Teclado O Táctil
-            const finalGas = controls.gasKey || controls.gasTouch;
-            const finalBrake = controls.brakeKey || controls.brakeTouch;
+            pollGamepads();
+
+            const finalGas = Math.max(controls.gasKey, controls.gasTouch, controls.gasPad);
+            const finalBrake = Math.max(controls.brakeKey, controls.brakeTouch, controls.brakePad);
 
             let finalSteer = 0;
             const MAX_STEER = 0.75;
 
-            // Dirección
-            if (controls.steerKey !== 0) {
-                // Teclado manda si se usa
+            if (Math.abs(controls.steerPad) > 0.05) {
+                finalSteer = controls.steerPad * MAX_STEER;
+            } 
+            else if (controls.steerKey !== 0) {
                 finalSteer = controls.steerKey * MAX_STEER;
-            } else if (state.controlMode === 'slide') {
-                // Si no, Slider (Touch o Mouse)
-                // Usamos el que tenga valor (el otro será 0)
+            } 
+            else if (state.controlMode === 'slide') {
                 const rawSlide = controls.steerTouch || controls.steerMouse;
                 finalSteer = rawSlide * MAX_STEER;
-            } else if (state.controlMode === 'gyro' && state.gyroEnabled) {
+            } 
+            else if (state.controlMode === 'gyro' && state.gyroEnabled) {
                 let calibratedInput = state.rawGyro - state.gyroOffset;
                 let clamp = Math.max(-35, Math.min(35, calibratedInput));
                 finalSteer = -(clamp / 35) * MAX_STEER; 
             }
+            
             wheelVis.rotation.z = -finalSteer * 2; 
 
-            // Aerodinámica
             const speed = chassisBody.velocity.length();
             if(speed > 5) {
                 const downforce = speed * 160; 
@@ -459,10 +545,10 @@
                 camera.position.lerp(offset, 0.15);
                 camera.lookAt(carMesh.position.x, carMesh.position.y+0.5, carMesh.position.z);
             } else {
-                const offset = new THREE.Vector3(0, 0.95, 0.6).applyMatrix4(carMesh.matrixWorld);
-                camera.position.copy(offset);
-                const lookTarget = new THREE.Vector3(0, 0.8, 10).applyMatrix4(carMesh.matrixWorld);
-                camera.lookAt(lookTarget);
+                // Cockpit Fixed Camera
+                const cockpitOffset = new THREE.Vector3(0, 0.7, 0.1).applyMatrix4(carMesh.matrixWorld);
+                camera.position.copy(cockpitOffset);
+                camera.quaternion.copy(carMesh.quaternion);
             }
 
             document.getElementById('speed-val').innerText = Math.floor(speed*3.6);
