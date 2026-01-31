@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1: Universal + Auto-Switch Input</title>
+    <title>F1: Final Fixed Version</title>
 
     <script type="importmap">
         {
@@ -20,7 +20,6 @@
         
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
         
-        /* BOTONES SUPERIORES (Siempre visibles) */
         .top-btn {
             position: absolute; top: 20px; font-size: 24px; background: rgba(0,0,0,0.5); color: white;
             border: 1px solid #555; border-radius: 8px; width: 50px; height: 50px; cursor: pointer; pointer-events: auto;
@@ -37,7 +36,6 @@
         #speed-val { font-size: 40px; font-weight: bold; line-height: 1; }
         #gear-val { font-size: 16px; color: #fff; }
 
-        /* NOTIFICACIÓN SISTEMA INPUT */
         #input-notify {
             position: absolute; top: 80px; left: 20px; 
             background: #fff; color: #000; padding: 8px 15px; 
@@ -46,18 +44,8 @@
             display: flex; align-items: center; gap: 8px;
         }
 
-        /* --- CONTROLES TÁCTILES --- */
-        .touch-control {
-            transition: opacity 0.5s, transform 0.5s;
-            opacity: 1;
-        }
-
-        /* CLASE MÁGICA: Oculta controles cuando se detecta teclado/mando */
-        .ui-hidden .touch-control {
-            opacity: 0 !important;
-            pointer-events: none !important;
-            transform: translateY(20px);
-        }
+        .touch-control { transition: opacity 0.5s, transform 0.5s; opacity: 1; }
+        .ui-hidden .touch-control { opacity: 0 !important; pointer-events: none !important; transform: translateY(20px); }
 
         .pedal {
             position: absolute; bottom: 20px; background: linear-gradient(to bottom, #333, #111);
@@ -90,7 +78,6 @@
             touch-action: none; overflow: hidden;
         }
         
-        /* Elementos dentro del steering-zone */
         .arrow-vis { font-size: 30px; opacity: 0.5; pointer-events: none; user-select: none; }
         #steer-indicator {
             position: absolute; top: 0; left: 50%; width: 4px; height: 100%;
@@ -117,7 +104,6 @@
 </head>
 <body>
 
-    <!-- Agregamos clase 'touch-control' a los elementos que queremos ocultar con teclado -->
     <div id="ui-layer" class="mode-slide">
         <div id="speed-box"><div id="speed-val">0</div><div id="gear-val">KM/H</div></div>
         
@@ -145,7 +131,8 @@
             <button id="opt-slide" class="option-btn active-opt">DESLIZAR (SLIDER)</button>
             <button id="opt-gyro" class="option-btn">GIROSCOPIO</button>
             <p style="font-size:12px; color:#aaa; margin-top:10px">
-                Conecta Teclado, Mando o Volante para ocultar controles táctiles automáticamente.
+                PC: Teclado/Mando/Volante.<br>
+                Móvil: Táctil/Gyro.
             </p>
             <button id="close-btn" class="option-btn play-btn">JUGAR</button>
         </div>
@@ -177,7 +164,7 @@
         const calibrateBtn = document.getElementById('calibrate-btn');
         const notifyEl = document.getElementById('input-notify');
 
-        // --- SISTEMA DE NOTIFICACIONES E INPUT AUTOMÁTICO ---
+        // --- NOTIFICACIONES & INPUT AUTO ---
         let notifyTimer;
         function showNotification(text, icon = "") {
             notifyEl.innerHTML = `${icon} ${text}`;
@@ -188,21 +175,16 @@
 
         function setTouchVisibility(visible) {
             if (visible) {
-                if (uiLayer.classList.contains('ui-hidden')) {
-                    uiLayer.classList.remove('ui-hidden');
-                    // showNotification("Modo Táctil", "👆"); // Opcional: puede ser molesto
-                }
+                if (uiLayer.classList.contains('ui-hidden')) uiLayer.classList.remove('ui-hidden');
             } else {
-                if (!uiLayer.classList.contains('ui-hidden')) {
-                    uiLayer.classList.add('ui-hidden');
-                }
+                if (!uiLayer.classList.contains('ui-hidden')) uiLayer.classList.add('ui-hidden');
             }
         }
 
-        // --- 1. GAMEPAD API ---
+        // --- GAMEPAD ---
         window.addEventListener("gamepadconnected", (e) => {
-            showNotification(`Mando conectado: ${e.gamepad.id.substring(0, 15)}...`, "🎮");
-            setTouchVisibility(false); // Ocultar controles al conectar mando
+            showNotification(`Mando: ${e.gamepad.id.substring(0, 10)}...`, "🎮");
+            setTouchVisibility(false);
         });
 
         function pollGamepads() {
@@ -210,23 +192,21 @@
             if (!gamepads) return;
             const gp = gamepads[0];
             if (gp) {
-                // Si se detecta movimiento en el mando, asegurar que el UI táctil sigue oculto
                 const active = Math.abs(gp.axes[0]) > 0.1 || gp.buttons.some(b => b.pressed);
                 if (active) setTouchVisibility(false);
 
                 // Dirección
                 const rawSteer = gp.axes[0]; 
-                if (Math.abs(rawSteer) > 0.1) controls.steerPad = -rawSteer;
-                else controls.steerPad = 0;
+                controls.steerPad = (Math.abs(rawSteer) > 0.1) ? -rawSteer : 0;
 
-                // Gas (R2/RT o Botón A)
+                // Gas
                 const btnGas = gp.buttons[7];
                 const btnA = gp.buttons[0];
                 if (btnGas && typeof btnGas === 'object' && btnGas.value > 0.1) controls.gasPad = btnGas.value;
                 else if (btnA && btnA.pressed) controls.gasPad = 1;
                 else controls.gasPad = 0;
 
-                // Freno (L2/LT o Botón B/X)
+                // Freno
                 const btnBrake = gp.buttons[6];
                 const btnB = gp.buttons[1];
                 const btnX = gp.buttons[2];
@@ -247,12 +227,11 @@
             }
         }
 
-        // --- 2. TECLADO (PC/Bluetooth) ---
+        // --- TECLADO ---
         window.addEventListener('keydown', (e) => {
             const key = e.key.toLowerCase();
             const gameKeys = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'c', 'r', ' '];
             
-            // Si pulsa una tecla de juego, ocultamos UI y avisamos si no estaba oculto
             if (gameKeys.includes(key)) {
                 if (!uiLayer.classList.contains('ui-hidden')) {
                     showNotification("Teclado Activo", "⌨️");
@@ -275,17 +254,14 @@
             if (key === 'a' || key === 'arrowleft' || key === 'd' || key === 'arrowright') controls.steerKey = 0;
         });
 
-        // --- 3. REACTIVAR TÁCTIL ---
-        // Si el usuario toca la pantalla (que no sea un botón específico), asumimos que quiere usar táctil
         window.addEventListener('touchstart', (e) => {
-            // Verificamos que no sea un botón de menú para evitar parpadeos
             if (!e.target.closest('.top-btn') && !e.target.closest('.modal-content')) {
                 setTouchVisibility(true);
             }
         }, { passive: true });
 
 
-        // --- 4. LÓGICA TÁCTIL (MÓVIL) Y MOUSE ---
+        // --- CONTROLES TÁCTILES ---
         let zoneRect = steerZone.getBoundingClientRect();
         let isDragging = false;
 
@@ -294,8 +270,7 @@
             let delta = clientX - centerX;
             const range = zoneRect.width / 2;
             let val = delta / range;
-            val = Math.max(-1, Math.min(1, val));
-            return -val;
+            return -Math.max(-1, Math.min(1, val));
         }
 
         function updateSteerVisual(val) {
@@ -303,17 +278,14 @@
             steerIndicator.style.transform = `translateX(calc(-50% + ${visualX}px))`;
         }
 
-        // Eventos Touch Slider
         steerZone.addEventListener('touchstart', (e) => { e.preventDefault(); controls.steerTouch = calcSteerFromX(e.touches[0].clientX); updateSteerVisual(controls.steerTouch); }, {passive: false});
         steerZone.addEventListener('touchmove', (e) => { e.preventDefault(); controls.steerTouch = calcSteerFromX(e.touches[0].clientX); updateSteerVisual(controls.steerTouch); }, {passive: false});
         steerZone.addEventListener('touchend', (e) => { e.preventDefault(); controls.steerTouch = 0; updateSteerVisual(0); }, {passive: false});
 
-        // Eventos Mouse Slider
         steerZone.addEventListener('mousedown', (e) => { isDragging = true; controls.steerMouse = calcSteerFromX(e.clientX); updateSteerVisual(controls.steerMouse); });
         window.addEventListener('mousemove', (e) => { if(isDragging) { controls.steerMouse = calcSteerFromX(e.clientX); updateSteerVisual(controls.steerMouse); } });
         window.addEventListener('mouseup', () => { isDragging = false; controls.steerMouse = 0; if (controls.steerTouch === 0 && controls.steerKey === 0) updateSteerVisual(0); });
 
-        // Pedales Táctiles
         function bindTouchPedal(id, type) {
             const el = document.getElementById(id);
             const set = (val) => {
@@ -331,7 +303,6 @@
 
         window.addEventListener('resize', () => zoneRect = steerZone.getBoundingClientRect());
 
-        // --- MENÚ & CONFIG ---
         setControlMode('slide');
         function setControlMode(mode) {
             state.controlMode = mode;
@@ -381,7 +352,7 @@
             else { if(e.gamma !== null) state.rawGyro = e.gamma; }
         });
 
-        // --- 3D ENGINE ---
+        // --- 3D SCENE ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x1a1a1a);
         scene.fog = new THREE.Fog(0x1a1a1a, 20, 150);
@@ -415,7 +386,7 @@
         const grid = new THREE.GridHelper(500, 100, 0x444444, 0x222222);
         scene.add(grid);
 
-        // --- COCHE ---
+        // --- COCHE & VISUALES ---
         const chassisBody = new CANNON.Body({ mass: 200, material: groundMat }); 
         const chassisShape = new CANNON.Box(new CANNON.Vec3(0.75, 0.15, 2.2));
         chassisBody.addShape(chassisShape, new CANNON.Vec3(0, 0.2, 0)); 
@@ -426,6 +397,8 @@
         
         const carMesh = new THREE.Group();
         const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff1100, roughness: 0.3, metalness: 0.1 });
+        
+        // Elementos que se ocultarán en cockpit
         const bodyM = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 4.4), bodyMat);
         bodyM.position.y = 0.2; bodyM.castShadow = true; carMesh.add(bodyM);
         
@@ -435,6 +408,7 @@
         const wing = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, 0.6), new THREE.MeshStandardMaterial({color:0x111111}));
         wing.position.set(0, 0.7, -1.9); carMesh.add(wing);
 
+        // Elementos visibles siempre (morro y volante)
         const nose = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 1.0), bodyMat);
         nose.position.set(0, 0.3, 2.4); carMesh.add(nose);
         
@@ -453,17 +427,10 @@
         const wOpts = {
             radius: 0.38, 
             directionLocal: new CANNON.Vec3(0,-1,0),
-            suspensionStiffness: 55, 
-            suspensionRestLength: 0.5, 
-            frictionSlip: 3, 
-            dampingRelaxation: 8.5, 
-            dampingCompression: 5.0, 
-            maxSuspensionForce: 100000,
-            axleLocal: new CANNON.Vec3(-1,0,0),
-            chassisConnectionPointLocal: new CANNON.Vec3(0,0,0),
-            maxSuspensionTravel: 0.25,
-            useCustomSlidingRotationalSpeed: true,
-            customSlidingRotationalSpeed: -30
+            suspensionStiffness: 55, suspensionRestLength: 0.5, frictionSlip: 3, 
+            dampingRelaxation: 8.5, dampingCompression: 5.0, maxSuspensionForce: 100000,
+            axleLocal: new CANNON.Vec3(-1,0,0), chassisConnectionPointLocal: new CANNON.Vec3(0,0,0),
+            maxSuspensionTravel: 0.25, useCustomSlidingRotationalSpeed: true, customSlidingRotationalSpeed: -30
         };
 
         wOpts.chassisConnectionPointLocal.set(1.2, 0.1, 1.6); vehicle.addWheel(wOpts);
@@ -484,38 +451,28 @@
 
         function animate() {
             requestAnimationFrame(animate);
-
             pollGamepads();
 
+            // 1. INPUTS
             const finalGas = Math.max(controls.gasKey, controls.gasTouch, controls.gasPad);
             const finalBrake = Math.max(controls.brakeKey, controls.brakeTouch, controls.brakePad);
 
             let finalSteer = 0;
             const MAX_STEER = 0.75;
 
-            if (Math.abs(controls.steerPad) > 0.05) {
-                finalSteer = controls.steerPad * MAX_STEER;
-            } 
-            else if (controls.steerKey !== 0) {
-                finalSteer = controls.steerKey * MAX_STEER;
-            } 
-            else if (state.controlMode === 'slide') {
-                const rawSlide = controls.steerTouch || controls.steerMouse;
-                finalSteer = rawSlide * MAX_STEER;
-            } 
+            if (Math.abs(controls.steerPad) > 0.05) finalSteer = controls.steerPad * MAX_STEER;
+            else if (controls.steerKey !== 0) finalSteer = controls.steerKey * MAX_STEER;
+            else if (state.controlMode === 'slide') finalSteer = (controls.steerTouch || controls.steerMouse) * MAX_STEER;
             else if (state.controlMode === 'gyro' && state.gyroEnabled) {
-                let calibratedInput = state.rawGyro - state.gyroOffset;
-                let clamp = Math.max(-35, Math.min(35, calibratedInput));
+                let clamp = Math.max(-35, Math.min(35, state.rawGyro - state.gyroOffset));
                 finalSteer = -(clamp / 35) * MAX_STEER; 
             }
             
             wheelVis.rotation.z = -finalSteer * 2; 
 
+            // 2. FISICA
             const speed = chassisBody.velocity.length();
-            if(speed > 5) {
-                const downforce = speed * 160; 
-                chassisBody.applyLocalForce(new CANNON.Vec3(0, -downforce, 0), new CANNON.Vec3(0, 0, 0));
-            }
+            if(speed > 5) chassisBody.applyLocalForce(new CANNON.Vec3(0, -speed * 160, 0), new CANNON.Vec3(0, 0, 0));
 
             const force = 2500; 
             vehicle.applyEngineForce(-finalGas * force, 2);
@@ -540,12 +497,21 @@
                 wheelMeshes[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion);
             }
 
-            if (state.cameraMode === 'chase') {
+            // 3. CAMARA Y ARREGLO VISUAL (BUG FIXED)
+            const isCockpit = state.cameraMode === 'cockpit';
+            
+            // Ocultamos la geometría que atraviesa la cámara
+            bodyM.visible = !isCockpit;
+            cockpitM.visible = !isCockpit;
+            wing.visible = !isCockpit; 
+
+            if (!isCockpit) {
+                // Chase Cam
                 const offset = new THREE.Vector3(0, 2.5, -5.5).applyMatrix4(carMesh.matrixWorld);
                 camera.position.lerp(offset, 0.15);
                 camera.lookAt(carMesh.position.x, carMesh.position.y+0.5, carMesh.position.z);
             } else {
-                // Cockpit Fixed Camera
+                // Cockpit Cam (Detrás del volante)
                 const cockpitOffset = new THREE.Vector3(0, 0.7, 0.1).applyMatrix4(carMesh.matrixWorld);
                 camera.position.copy(cockpitOffset);
                 camera.quaternion.copy(carMesh.quaternion);
