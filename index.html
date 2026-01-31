@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1 Mobile: No Bounce</title>
+    <title>F1: PC & Mobile Cross-Play</title>
 
     <script type="importmap">
         {
@@ -55,7 +55,6 @@
         .mode-slide #brake-pedal { left: auto; right: 110px; }
         .mode-gyro #brake-pedal { right: auto; left: 30px; }
 
-        /* ZONA SLIDER */
         #steering-zone {
             position: absolute; bottom: 30px; left: 30px;
             width: 240px; height: 80px;
@@ -94,12 +93,14 @@
         .option-btn { width: 100%; padding: 15px; margin-top: 10px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer; background: #444; color: #aaa; }
         .active-opt { border: 2px solid #0ff; color: #fff; background: #333; box-shadow: 0 0 10px #0ff; }
         .play-btn { background: #c00; color: white; font-weight: bold; margin-top: 20px; color: white; }
+        .pc-info { font-size: 12px; color: #aaa; margin-top: 20px; border-top: 1px solid #444; padding-top: 10px; }
     </style>
 </head>
 <body>
 
     <div id="ui-layer" class="mode-slide">
         <div id="speed-box"><div id="speed-val">0</div><div id="gear-val">KM/H</div></div>
+        
         <button id="settings-btn" class="top-btn">⚙️</button>
         <button id="camera-btn" class="top-btn">🎥</button>
         <button id="reset-btn" class="top-btn">🔄</button>
@@ -111,8 +112,8 @@
             <div class="arrow-vis">➡️</div>
         </div>
 
-        <div id="brake-pedal" class="pedal">FRENO</div>
-        <div id="gas-pedal" class="pedal">GAS</div>
+        <div id="brake-pedal" class="pedal">FRENO (S)</div>
+        <div id="gas-pedal" class="pedal">GAS (W)</div>
     </div>
 
     <div id="modal">
@@ -121,6 +122,11 @@
             <p>Elige tu estilo:</p>
             <button id="opt-slide" class="option-btn active-opt">DESLIZAR (SLIDER)</button>
             <button id="opt-gyro" class="option-btn">GIROSCOPIO</button>
+            <div class="pc-info">
+                PC CONTROLS:<br>
+                W: Acelerar | S: Freno<br>
+                A/D o Mouse: Girar
+            </div>
             <button id="close-btn" class="option-btn play-btn">JUGAR</button>
         </div>
     </div>
@@ -129,7 +135,16 @@
         import * as THREE from 'three';
         import * as CANNON from 'cannon-es';
 
-        const state = { controlMode: 'slide', cameraMode: 'chase', gyroEnabled: false, rawGyro: 0, gyroOffset: 0, steerVal: 0 };
+        const state = { 
+            controlMode: 'slide', 
+            cameraMode: 'chase', 
+            gyroEnabled: false, 
+            rawGyro: 0, 
+            gyroOffset: 0, 
+            steerVal: 0,
+            keyLeft: 0,
+            keyRight: 0
+        };
         const input = { gas: 0, brake: 0 };
 
         const uiLayer = document.getElementById('ui-layer');
@@ -138,9 +153,28 @@
         const steerIndicator = document.getElementById('steer-indicator');
         const calibrateBtn = document.getElementById('calibrate-btn');
 
-        // --- SLIDER LOGIC ---
+        // --- TECLADO (PC SUPPORT) ---
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'w' || key === 'arrowup') { input.gas = 1; document.getElementById('gas-pedal').classList.add('pressed'); }
+            if (key === 's' || key === 'arrowdown') { input.brake = 1; document.getElementById('brake-pedal').classList.add('pressed'); }
+            if (key === 'a' || key === 'arrowleft') state.keyLeft = 1;
+            if (key === 'd' || key === 'arrowright') state.keyRight = 1;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'w' || key === 'arrowup') { input.gas = 0; document.getElementById('gas-pedal').classList.remove('pressed'); }
+            if (key === 's' || key === 'arrowdown') { input.brake = 0; document.getElementById('brake-pedal').classList.remove('pressed'); }
+            if (key === 'a' || key === 'arrowleft') state.keyLeft = 0;
+            if (key === 'd' || key === 'arrowright') state.keyRight = 0;
+        });
+
+        // --- SLIDER LOGIC (TOUCH & MOUSE) ---
         let zoneRect = steerZone.getBoundingClientRect();
-        function handleSteerTouch(clientX) {
+        let isDragging = false;
+
+        function handleSteer(clientX) {
             const centerX = zoneRect.left + zoneRect.width / 2;
             let delta = clientX - centerX;
             const range = zoneRect.width / 2;
@@ -150,15 +184,27 @@
             const visualX = val * (zoneRect.width / 2);
             steerIndicator.style.transform = `translateX(calc(-50% + ${visualX}px))`;
         }
+
         function resetSteer() {
-            state.steerVal = 0;
-            steerIndicator.style.transform = `translateX(-50%)`;
+            if(!state.keyLeft && !state.keyRight) { // Solo resetear si no se usa teclado
+                state.steerVal = 0;
+                steerIndicator.style.transform = `translateX(-50%)`;
+            }
         }
-        steerZone.addEventListener('touchstart', (e) => { e.preventDefault(); handleSteerTouch(e.touches[0].clientX); }, {passive: false});
-        steerZone.addEventListener('touchmove', (e) => { e.preventDefault(); handleSteerTouch(e.touches[0].clientX); }, {passive: false});
-        steerZone.addEventListener('touchend', (e) => { e.preventDefault(); resetSteer(); }, {passive: false});
+
+        // Eventos Touch
+        steerZone.addEventListener('touchstart', (e) => { isDragging = true; e.preventDefault(); handleSteer(e.touches[0].clientX); }, {passive: false});
+        steerZone.addEventListener('touchmove', (e) => { if(isDragging) { e.preventDefault(); handleSteer(e.touches[0].clientX); } }, {passive: false});
+        steerZone.addEventListener('touchend', (e) => { isDragging = false; e.preventDefault(); resetSteer(); }, {passive: false});
+
+        // Eventos Mouse (PC)
+        steerZone.addEventListener('mousedown', (e) => { isDragging = true; handleSteer(e.clientX); });
+        window.addEventListener('mousemove', (e) => { if(isDragging) handleSteer(e.clientX); });
+        window.addEventListener('mouseup', () => { isDragging = false; resetSteer(); });
+
         window.addEventListener('resize', () => zoneRect = steerZone.getBoundingClientRect());
 
+        // --- UI ---
         setControlMode('slide');
         function setControlMode(mode) {
             state.controlMode = mode;
@@ -206,9 +252,13 @@
             else { if(e.gamma !== null) state.rawGyro = e.gamma; }
         });
 
+        // Touch Pedals
         function bindTouch(id, type, val) {
             const el = document.getElementById(id);
             const update = (active) => {
+                // Solo actualizar si no viene del teclado
+                if(!active && (type === 'gas' && input.gas === 1 || type === 'brake' && input.brake === 1)) return;
+                
                 input[type] = active ? val : 0;
                 active ? el.classList.add('pressed') : el.classList.remove('pressed');
             };
@@ -254,138 +304,7 @@
         const grid = new THREE.GridHelper(500, 100, 0x444444, 0x222222);
         scene.add(grid);
 
-        // --- COCHE ---
-        const chassisBody = new CANNON.Body({ mass: 200, material: groundMat }); // MASA REDUCIDA
+        // --- COCHE (NO BOUNCE) ---
+        const chassisBody = new CANNON.Body({ mass: 200, material: groundMat }); 
         const chassisShape = new CANNON.Box(new CANNON.Vec3(0.75, 0.15, 2.2));
-        chassisBody.addShape(chassisShape, new CANNON.Vec3(0, 0.2, 0)); 
-        chassisBody.position.set(0, 2, 0);
-        chassisBody.angularDamping = 0.5;
-        chassisBody.linearDamping = 0.05;
-        chassisBody.allowSleep = false;
-        
-        const carMesh = new THREE.Group();
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff1100, roughness: 0.3, metalness: 0.1 });
-        const bodyM = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 4.4), bodyMat);
-        bodyM.position.y = 0.2; bodyM.castShadow = true; carMesh.add(bodyM);
-        
-        const cockpitM = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.25, 1.2), new THREE.MeshStandardMaterial({color:0x111111}));
-        cockpitM.position.set(0, 0.45, 0.2); carMesh.add(cockpitM);
-
-        const wing = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, 0.6), new THREE.MeshStandardMaterial({color:0x111111}));
-        wing.position.set(0, 0.7, -1.9); carMesh.add(wing);
-
-        const nose = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 1.0), bodyMat);
-        nose.position.set(0, 0.3, 2.4); carMesh.add(nose);
-        
-        const wheelVis = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.02, 8, 16), new THREE.MeshStandardMaterial({color:0x333333}));
-        wheelVis.position.set(0, 0.6, 0.5); carMesh.add(wheelVis);
-
-        scene.add(carMesh);
-
-        const vehicle = new CANNON.RaycastVehicle({
-            chassisBody: chassisBody,
-            indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2
-        });
-
-        // Configuración Suspensión ANTI-REBOTE
-        const wOpts = {
-            radius: 0.38, 
-            directionLocal: new CANNON.Vec3(0,-1,0),
-            suspensionStiffness: 55, // Rigidez Media-Alta
-            suspensionRestLength: 0.5, 
-            frictionSlip: 3, 
-            dampingRelaxation: 8.5, // DAMPING MUY ALTO (Evita que el muelle "dispare" el coche hacia arriba)
-            dampingCompression: 5.0, 
-            maxSuspensionForce: 100000,
-            axleLocal: new CANNON.Vec3(-1,0,0),
-            chassisConnectionPointLocal: new CANNON.Vec3(0,0,0),
-            maxSuspensionTravel: 0.25,
-            useCustomSlidingRotationalSpeed: true,
-            customSlidingRotationalSpeed: -30
-        };
-
-        wOpts.chassisConnectionPointLocal.set(1.2, 0.1, 1.6); vehicle.addWheel(wOpts);
-        wOpts.chassisConnectionPointLocal.set(-1.2, 0.1, 1.6); vehicle.addWheel(wOpts);
-        wOpts.chassisConnectionPointLocal.set(1.2, 0.1, -1.6); vehicle.addWheel(wOpts);
-        wOpts.chassisConnectionPointLocal.set(-1.2, 0.1, -1.6); vehicle.addWheel(wOpts);
-        vehicle.addToWorld(world);
-
-        const wheelMeshes = [];
-        const wGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.55, 32);
-        wGeo.rotateZ(Math.PI/2);
-        const wMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
-        for(let i=0; i<4; i++){
-            const m = new THREE.Mesh(wGeo, wMat);
-            m.castShadow = true; scene.add(m);
-            wheelMeshes.push(m);
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            let steerVal = 0;
-            const MAX_STEER = 0.75;
-
-            if (state.controlMode === 'slide') {
-                steerVal = state.steerVal * MAX_STEER;
-            } else if (state.controlMode === 'gyro' && state.gyroEnabled) {
-                let calibratedInput = state.rawGyro - state.gyroOffset;
-                let clamp = Math.max(-35, Math.min(35, calibratedInput));
-                steerVal = -(clamp / 35) * MAX_STEER; 
-            }
-            wheelVis.rotation.z = -steerVal * 2; 
-
-            // Aerodinámica
-            const speed = chassisBody.velocity.length();
-            if(speed > 5) {
-                const downforce = speed * 160; 
-                chassisBody.applyLocalForce(new CANNON.Vec3(0, -downforce, 0), new CANNON.Vec3(0, 0, 0));
-            }
-
-            const force = 2500; // Ajustado para la nueva masa de 200
-            vehicle.applyEngineForce(-input.gas * force, 2);
-            vehicle.applyEngineForce(-input.gas * force, 3);
-            
-            const brakeForce = 100;
-            vehicle.setBrake(input.brake * (brakeForce * 0.5), 0);
-            vehicle.setBrake(input.brake * (brakeForce * 0.5), 1);
-            vehicle.setBrake(input.brake * brakeForce, 2);
-            vehicle.setBrake(input.brake * brakeForce, 3);
-
-            vehicle.setSteeringValue(steerVal, 0);
-            vehicle.setSteeringValue(steerVal, 1);
-
-            world.fixedStep();
-
-            carMesh.position.copy(chassisBody.position);
-            carMesh.quaternion.copy(chassisBody.quaternion);
-            for(let i=0; i<4; i++){
-                vehicle.updateWheelTransform(i);
-                wheelMeshes[i].position.copy(vehicle.wheelInfos[i].worldTransform.position);
-                wheelMeshes[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion);
-            }
-
-            if (state.cameraMode === 'chase') {
-                const offset = new THREE.Vector3(0, 2.5, -5.5).applyMatrix4(carMesh.matrixWorld);
-                camera.position.lerp(offset, 0.15);
-                camera.lookAt(carMesh.position.x, carMesh.position.y+0.5, carMesh.position.z);
-            } else {
-                const offset = new THREE.Vector3(0, 0.95, 0.6).applyMatrix4(carMesh.matrixWorld);
-                camera.position.copy(offset);
-                const lookTarget = new THREE.Vector3(0, 0.8, 10).applyMatrix4(carMesh.matrixWorld);
-                camera.lookAt(lookTarget);
-            }
-
-            document.getElementById('speed-val').innerText = Math.floor(speed*3.6);
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth/window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
-</body>
-</html>
+        chassisBody.addShape(chassisShape, 
