@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Racing Formula v10</title>
+    <title>Racing Formula v11</title>
 
     <script type="importmap">
         {
@@ -416,19 +416,18 @@
                 // Suavizado (lerp) de la versión original
                 camera.position.lerp(offset, 0.1); 
                 camera.lookAt(lookAt);
-            } //else {
+            } else {
                 // Vista Cockpit (Sin cambios para evitar clipping)
-                offset = new THREE.Vector3(0, 0.85, 0.2).applyMatrix4(carMesh.matrixWorld);
+                offset = new THREE.Vector3(0, 4.00, -8.0).applyMatrix4(carMesh.matrixWorld); // (0, 0.85,0.2)
                 camera.position.copy(offset);
                 if (inputs.look) lookAt = new THREE.Vector3(0, 0.85, -10).applyMatrix4(carMesh.matrixWorld);
                 else lookAt = new THREE.Vector3(0, 0.8, 10).applyMatrix4(carMesh.matrixWorld);
                 camera.lookAt(lookAt);
             }
-            //Eliminar si da Bug
-             else{
-            const camOff = new THREE.Vector3(0, 4, -8).applyMatrix4(carMesh.matrixWorld);
-            camera.position.lerp(camOff, 0.1);
-            camera.lookAt(carMesh.position);
+             
+            //const camOff = new THREE.Vector3(0, 4, -8).applyMatrix4(carMesh.matrixWorld);
+           // camera.position.lerp(camOff, 0.1);
+            //camera.lookAt(carMesh.position);
         }
             renderer.render(scene, camera);
         }
