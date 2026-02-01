@@ -356,7 +356,12 @@
         const wing = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, 0.6), blackMat); 
         wing.position.set(0, 0.7, -1.9); carMesh.add(wing);
         const wheelVis = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.02, 8, 16), new THREE.MeshStandardMaterial({color:0x333333})); 
-        wheelVis.position.set(0, 0.6, 0.5); carMesh.add(wheelVis); 
+        wheelVis.position.set(0, 0.6, 0.5); carMesh.add(wheelVis);
+        
+        // CONFIGURAR LAYERS: nose, seat, sideL, sideR, wheelVis no se ven en cockpit
+        camera.layers.enable(0); camera.layers.enable(1);
+        nose.layers.set(1); seat.layers.set(1); sideL.layers.set(1); sideR.layers.set(1); wheelVis.layers.set(1);
+        
         scene.add(carMesh);
 
         const vehicle = new CANNON.RaycastVehicle({ chassisBody: chassisBody, indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2 });
@@ -415,6 +420,9 @@
 
             let offset, lookAt;
             if (state.cameraMode === 'chase') {
+                // CHASE CAM: ver todo el auto (layers 0 y 1)
+                camera.layers.enable(0); camera.layers.enable(1);
+                
                 if (inputs.look) { 
                     offset = new THREE.Vector3(0, 4, -8).applyMatrix4(carMesh.matrixWorld); 
                     camera.position.copy(offset);
@@ -427,7 +435,9 @@
                     camera.lookAt(lookAt);
                 }
             } else {
-                // COCKPIT CAMERA - POSICIÓN AJUSTADA PARA EVITAR CLIPPING
+                // COCKPIT: solo ver partes traseras (layer 0), ocultar nose/seat/sides
+                camera.layers.set(0);
+                
                 offset = new THREE.Vector3(0, 1.0, -0.3).applyMatrix4(carMesh.matrixWorld);
                 camera.position.copy(offset);
                 
