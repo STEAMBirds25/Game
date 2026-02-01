@@ -419,7 +419,7 @@
             
             // AMORTIGUACIÓN (Damping):
             // Controla el rebote. Si rebota mucho, sube el Relaxation.
-            dampingRelaxation: 9.5, 
+            dampingRelaxation: 8.5, 
             dampingCompression: 6.5, 
             
             maxSuspensionForce: 100000, 
@@ -498,7 +498,7 @@
             // 250 = Carga Máxima (Mónaco/Hungría)
             // =========================================================================
             const speed = chassisBody.velocity.length();
-            if(speed > 5) chassisBody.applyLocalForce(new CANNON.Vec3(0, -speed * 160, 0), new CANNON.Vec3(0, 0, 0));
+            if(speed > 5) chassisBody.applyLocalForce(new CANNON.Vec3(0, -speed * 100, 0), new CANNON.Vec3(0, 0, 0));
 
             const force = 3000; vehicle.applyEngineForce(-inputs.gas * force, 2); vehicle.applyEngineForce(-inputs.gas * force, 3);
             vehicle.setBrake(inputs.brake * 100, 0); vehicle.setBrake(inputs.brake * 100, 1);
