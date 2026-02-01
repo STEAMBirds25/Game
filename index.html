@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1: MASTER + CALIBRATOR</title>
+    <title>F1: MASTER + FREE CAM + HITBOX</title>
 
     <script type="importmap">
         {
@@ -25,7 +25,7 @@
             display: flex; flex-direction: column; justify-content: space-between;
         }
 
-        /* CALIBRATOR PANEL (DEBUG) */
+        /* CALIBRATOR PANEL (DEBUG) - AHORA MÁS ALTO PARA QUE QUEPAN LOS NUEVOS SLIDERS */
         #debug-panel {
             position: absolute; top: 60px; right: 10px; width: 260px;
             background: rgba(0, 20, 60, 0.95); color: white; padding: 10px;
@@ -33,8 +33,9 @@
             z-index: 5000; pointer-events: auto; display: flex; flex-direction: column; gap: 5px;
         }
         .debug-row { display: flex; justify-content: space-between; align-items: center; }
-        input[type=range] { width: 120px; cursor: pointer; }
+        input[type=range] { width: 110px; cursor: pointer; }
         h3 { margin: 0 0 5px 0; text-align: center; color: cyan; border-bottom: 1px solid cyan; }
+        .section-title { color: yellow; font-weight: bold; margin-top: 5px; border-top: 1px solid #555; padding-top: 2px;}
 
         /* ESTILOS DEL JUEGO NORMAL */
         .top-bar { padding: 15px; display: flex; gap: 10px; pointer-events: auto; }
@@ -61,19 +62,28 @@
 
     <!-- PANEL DE CALIBRACIÓN -->
     <div id="debug-panel">
-        <h3>🔧 CALIBRADOR EN VIVO</h3>
+        <h3>🔧 CALIBRADOR</h3>
+        
+        <div class="section-title">POSICIÓN</div>
         <div class="debug-row"><span>ANCHO (X):</span> <input type="range" id="sl-x" min="0.5" max="3.0" step="0.05" value="1.6"> <span id="val-x">1.6</span></div>
         <div class="debug-row"><span>ALTURA (Y):</span> <input type="range" id="sl-y" min="-1.0" max="1.5" step="0.05" value="-0.3"> <span id="val-y">-0.3</span></div>
         <div class="debug-row"><span>LARGO (Z):</span> <input type="range" id="sl-z" min="0.5" max="3.0" step="0.05" value="1.0"> <span id="val-z">1.0</span></div>
-        <div class="debug-row"><span>VISUAL Y:</span> <input type="range" id="sl-vy" min="-2.0" max="2.0" step="0.05" value="-0.8"> <span id="val-vy">-0.8</span></div>
+        
+        <div class="section-title">HITBOX FÍSICA (RADIO)</div>
+        <div class="debug-row"><span>RADIO DEL:</span> <input type="range" id="sl-rad-f" min="0.1" max="1.5" step="0.01" value="0.38"> <span id="val-rad-f">0.38</span></div>
+        <div class="debug-row"><span>RADIO TRAS:</span> <input type="range" id="sl-rad-r" min="0.1" max="1.5" step="0.01" value="0.5"> <span id="val-rad-r">0.50</span></div>
+
+        <div class="section-title">VISUAL</div>
+        <div class="debug-row"><span>CHASIS Y:</span> <input type="range" id="sl-vy" min="-2.0" max="2.0" step="0.05" value="-0.8"> <span id="val-vy">-0.8</span></div>
         <div class="debug-row"><span>ROT RUEDA:</span> <input type="range" id="sl-rx" min="0" max="6.28" step="1.57" value="0"> <span id="val-rx">0</span></div>
-        <div style="text-align:center; margin-top:5px; color:#aaa;">Usa esto para alinear las ruedas</div>
     </div>
 
     <div id="ui-layer">
         <div class="top-bar">
             <button id="btn-settings" class="icon-btn">⚙️</button>
             <button id="btn-camera" class="icon-btn">🎥</button>
+            <!-- BOTÓN CÁMARA LIBRE -->
+            <button id="btn-freecam" class="icon-btn" style="background:rgba(255, 0, 255, 0.5)">👁️</button> 
             <button id="btn-reset" class="icon-btn">🔄</button>
             <button id="btn-calibrate" class="icon-btn hidden" style="background:#0055aa">🎯</button>
         </div>
@@ -99,6 +109,8 @@
         import * as THREE from 'three';
         import * as CANNON from 'cannon-es';
         import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+        // Importamos OrbitControls para la cámara libre
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         // ==========================================
         //  CONFIGURACIÓN INICIAL
@@ -109,8 +121,8 @@
         const REAR_WHEEL_SCALE = 1.3; 
         const CHASSIS_ROT_Y = Math.PI; 
 
-        // Variables de Calibración (Se actualizan con sliders)
-        const cal = { x: 1.6, y: -0.3, z: 1.0, visualY: -0.8, rotX: 0 };
+        // Variables de Calibración
+        const cal = { x: 1.6, y: -0.3, z: 1.0, visualY: -0.8, rotX: 0, radFront: 0.38, radRear: 0.50 };
 
         // ==========================================
 
@@ -130,11 +142,14 @@
 
         // --- SISTEMA DE ACTUALIZACIÓN DE CALIBRACIÓN ---
         function updateCalibrationFromSliders() {
+            // Leer valores
             cal.x = parseFloat(document.getElementById('sl-x').value);
             cal.y = parseFloat(document.getElementById('sl-y').value);
             cal.z = parseFloat(document.getElementById('sl-z').value);
             cal.visualY = parseFloat(document.getElementById('sl-vy').value);
             cal.rotX = parseFloat(document.getElementById('sl-rx').value);
+            cal.radFront = parseFloat(document.getElementById('sl-rad-f').value);
+            cal.radRear = parseFloat(document.getElementById('sl-rad-r').value);
 
             // Actualizar etiquetas
             document.getElementById('val-x').innerText = cal.x;
@@ -142,23 +157,29 @@
             document.getElementById('val-z').innerText = cal.z;
             document.getElementById('val-vy').innerText = cal.visualY;
             document.getElementById('val-rx').innerText = (cal.rotX).toFixed(2);
+            document.getElementById('val-rad-f').innerText = cal.radFront;
+            document.getElementById('val-rad-r').innerText = cal.radRear;
 
-            // Aplicar a Físicas (Mover ruedas)
-            // Esto mueve los puntos donde las ruedas se conectan al chasis
+            // --- APLICAR A FÍSICAS ---
             const X = 1.1 * SCALE_FACTOR * cal.x;
             const Y = cal.y * SCALE_FACTOR;
             const Z = 1.6 * SCALE_FACTOR * cal.z;
 
             if(vehicle) {
-                // Front
+                // Posiciones
                 vehicle.wheelInfos[0].chassisConnectionPointLocal.set(X, Y, Z);
                 vehicle.wheelInfos[1].chassisConnectionPointLocal.set(-X, Y, Z);
-                // Rear
                 vehicle.wheelInfos[2].chassisConnectionPointLocal.set(X, Y, -Z);
                 vehicle.wheelInfos[3].chassisConnectionPointLocal.set(-X, Y, -Z);
+
+                // Radios (Hitbox) - Esto hace que la rueda física crezca o encoja
+                vehicle.wheelInfos[0].radius = cal.radFront * SCALE_FACTOR;
+                vehicle.wheelInfos[1].radius = cal.radFront * SCALE_FACTOR;
+                vehicle.wheelInfos[2].radius = cal.radRear * SCALE_FACTOR;
+                vehicle.wheelInfos[3].radius = cal.radRear * SCALE_FACTOR;
             }
 
-            // Aplicar a Visuales (Rotación Rueda)
+            // Aplicar a Visuales (Rotación Rueda corrección)
             wheelVisuals.forEach(w => w.rotation.x = cal.rotX);
         }
 
@@ -168,12 +189,12 @@
             const k=e.key.toLowerCase();
             if(k==='w'||k==='arrowup') inputs.key.gas=1; if(k==='s'||k==='arrowdown') inputs.key.brake=1;
             if(k==='a'||k==='arrowleft') inputs.key.steer=1; if(k==='d'||k==='arrowright') inputs.key.steer=-1;
-            if(k==='c') state.cam=(state.cam==='chase')?'cockpit':'chase'; if(k==='r') resetCar(); if(k==='b') state.lookBack=true;
+            if(k==='c') state.cam=(state.cam==='chase')?'cockpit':'chase'; if(k==='r') resetCar(); 
         });
         window.addEventListener('keyup', (e) => {
             const k=e.key.toLowerCase();
             if(k==='w'||k==='arrowup') inputs.key.gas=0; if(k==='s'||k==='arrowdown') inputs.key.brake=0;
-            if(k==='a'||k==='arrowleft'||k==='d'||k==='arrowright') inputs.key.steer=0; if(k==='b') state.lookBack=false;
+            if(k==='a'||k==='arrowleft'||k==='d'||k==='arrowright') inputs.key.steer=0;
         });
 
         // Touch
@@ -213,6 +234,19 @@
         document.getElementById('btn-camera').onclick = () => state.cam = (state.cam==='chase')?'cockpit':'chase';
         document.getElementById('btn-reset').onclick = resetCar;
         ui.btnCalibrate.onclick = () => { state.gyroOffset = state.gyroVal; };
+        
+        // --- CAMARA LIBRE (FREECAM) ---
+        document.getElementById('btn-freecam').onclick = () => {
+            state.cam = (state.cam === 'free') ? 'chase' : 'free';
+            if(state.cam === 'free') {
+                orbit.enabled = true; // Activar control mouse
+                document.getElementById('input-notify').innerText = "👁️ Cámara Libre";
+                document.getElementById('input-notify').style.opacity = 1;
+            } else {
+                orbit.enabled = false; // Desactivar para jugar
+                document.getElementById('input-notify').style.opacity = 0;
+            }
+        };
 
         function requestGyro() { if (typeof DeviceOrientationEvent?.requestPermission==='function') DeviceOrientationEvent.requestPermission().then(r=>{if(r==='granted')state.gyro=true;}); else state.gyro=true; }
         window.addEventListener('deviceorientation', (e)=>{ if(state.gyro) state.gyroVal = (window.innerWidth>window.innerHeight)?e.beta:e.gamma; });
@@ -225,6 +259,11 @@
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight); renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
+
+        // --- ORBIT CONTROLS (CÁMARA LIBRE) ---
+        const orbit = new OrbitControls(camera, renderer.domElement);
+        orbit.enableDamping = true;
+        orbit.enabled = false; // Apagado por defecto
 
         const sun = new THREE.DirectionalLight(0xffffff, 2.5); sun.position.set(50, 100, 50); sun.castShadow = true; scene.add(sun);
         scene.add(new THREE.AmbientLight(0xffffff, 0.8));
@@ -328,15 +367,18 @@
                 }
             }
 
-            // Camera
-            if(state.cam === 'chase') {
-                const offset = state.lookBack ? new THREE.Vector3(0, 3*SCALE_FACTOR, 7*SCALE_FACTOR) : new THREE.Vector3(0, 3*SCALE_FACTOR, -6*SCALE_FACTOR);
-                const target = offset.applyMatrix4(chassisGroup.matrixWorld);
+            // Camera System
+            if(state.cam === 'free') {
+                // La cámara libre (OrbitControls) se encarga de todo
+                orbit.target.copy(chassisBody.position); // Orbitar alrededor del coche
+                orbit.update();
+            } else if(state.cam === 'chase') {
+                const target = new THREE.Vector3(0, 3*SCALE_FACTOR, -7*SCALE_FACTOR).applyMatrix4(chassisGroup.matrixWorld);
                 camera.position.lerp(target, 0.1);
                 camera.lookAt(chassisGroup.position);
             } else {
                 camera.position.copy(new THREE.Vector3(0, 0.8*SCALE_FACTOR, 0.3*SCALE_FACTOR).applyMatrix4(chassisGroup.matrixWorld));
-                dummy.quaternion.copy(chassisGroup.quaternion); if(!state.lookBack) dummy.rotateY(Math.PI);
+                dummy.quaternion.copy(chassisGroup.quaternion); dummy.rotateY(Math.PI);
                 camera.quaternion.slerp(dummy.quaternion, 0.2);
             }
 
