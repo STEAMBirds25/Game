@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Racing Formula v9.3 (Geo Fix)</title>
+    <title>Racing Formula v9.3 (Camera Fix)</title>
 
     <script type="importmap">
         {
@@ -30,7 +30,6 @@
 
         .top-btn { position: absolute; top: 20px; font-size: 24px; background: rgba(0,0,0,0.5); color: white; border: 1px solid #555; border-radius: 8px; width: 50px; height: 50px; cursor: pointer; pointer-events: auto; display: flex; justify-content: center; align-items: center; }
         #settings-btn { left: 20px; }
-        /* Posiciones cómodas para movil */
         #camera-btn { left: 80px; }
         #reset-btn { left: 140px; background: rgba(200, 0, 0, 0.5); }
 
@@ -54,7 +53,6 @@
         }
         #steering-zone::after { content: ''; position: absolute; left: 50%; top: 20%; height: 60%; width: 2px; background: rgba(255,255,255,0.1); transform: translateX(-50%); }
 
-        /* MIRAR ATRAS */
         #touch-look {
             position: absolute; bottom: 130px; left: 120px; width: 60px; height: 60px; 
             background: rgba(0,0,0,0.5); border: 2px solid #aaa; border-radius: 50%;
@@ -63,7 +61,6 @@
         }
         #touch-look:active { background: #fff; color: #000; border-color: #fff; }
 
-        /* TELEMETRY */
         #telemetry-app {
             position: absolute; bottom: 160px; right: 20px; width: 100px; height: 80px;
             background: rgba(0, 0, 0, 0.6); border: 1px solid #444; padding: 5px; pointer-events: none;
@@ -76,7 +73,6 @@
         .tel-steer-row { height: 10px; background: #222; border: 1px solid #555; position: relative; margin-top: 5px; }
         #tel-steer-marker { width: 4px; height: 100%; background: #00ffff; position: absolute; left: 50%; top: 0; transform: translateX(-50%); }
 
-        /* MENU */
         #modal { position: fixed; top:0; left:0; width:100%; height:100%; background: #111; z-index: 200; display: flex; flex-direction: column; overflow: hidden; }
         .modal-header { padding: 20px; background: #222; border-bottom: 1px solid #c00; display: flex; justify-content: space-between; align-items: center; }
         .modal-title { font-size: 20px; color: #fff; font-weight: bold; text-transform: uppercase; }
@@ -105,7 +101,6 @@
 </head>
 <body>
 
-    <!-- JUEGO UI -->
     <div id="ui-layer">
         <button id="settings-btn" class="top-btn">⚙️</button>
         <button id="camera-btn" class="top-btn">🎥</button>
@@ -127,28 +122,24 @@
             <div class="tel-steer-row"><div id="tel-steer-marker"></div></div>
         </div>
 
-        <!-- CONTROLES TÁCTILES -->
         <div id="touch-controls">
             <div id="steering-zone">
                 <div id="steer-indicator"></div>
                 <div class="arrow-vis">⬅️</div>
                 <div class="arrow-vis">➡️</div>
             </div>
-            <!-- Botón Mirar Atrás -->
             <div id="touch-look">👀</div>
             <div id="vis-brake" class="pedal"></div>
             <div id="vis-gas" class="pedal"></div>
         </div>
     </div>
 
-    <!-- MENU CONFIG -->
     <div id="modal">
         <div class="modal-header">
             <div class="modal-title">Configuración v9.3</div>
             <button id="play-btn">GUARDAR Y JUGAR</button>
         </div>
         <div class="modal-body">
-            
             <div class="col-config">
                 <div class="control-group" id="mobile-config">
                     <label class="control-label">Modo Móvil</label>
@@ -157,7 +148,6 @@
                         <button class="option-btn" id="opt-gyro" style="flex:1">GIROSCOPIO</button>
                     </div>
                 </div>
-
                 <div class="control-group">
                     <label class="control-label">DIRECCIÓN (STEER)</label>
                     <div class="control-row"> <select id="sel-steer"></select> <div class="invert-chk"><input type="checkbox" id="inv-steer"> Invertir</div> </div>
@@ -165,19 +155,16 @@
                     <div style="margin-top:5px; font-size:11px; display:flex; justify-content:space-between"><span>Linealidad:</span> <span id="val-gamma">1.0</span></div>
                     <input type="range" id="rng-gamma" min="1.0" max="2.5" step="0.1" value="1.0" style="width:100%">
                 </div>
-
                 <div class="control-group">
                     <label class="control-label">ACELERADOR</label>
                     <div class="control-row"> <select id="sel-gas"></select> <div class="invert-chk"><input type="checkbox" id="inv-gas"> Invertir</div> </div>
                     <div class="live-bar-bg"><div id="bar-gas" class="live-bar-fill gas-fill"></div></div>
                 </div>
-
                 <div class="control-group">
                     <label class="control-label">FRENO</label>
                     <div class="control-row"> <select id="sel-brake"></select> <div class="invert-chk"><input type="checkbox" id="inv-brake"> Invertir</div> </div>
                     <div class="live-bar-bg"><div id="bar-brake" class="live-bar-fill"></div></div>
                 </div>
-
                 <div class="control-group" style="border-color: #0088ff;">
                     <label class="control-label" style="color:#0088ff">BOTONES EXTRA</label>
                     <div style="margin-bottom:5px"><span style="font-size:11px">CAMBIAR CÁMARA</span><div class="control-row"> <select id="sel-cam"></select> </div></div>
@@ -185,7 +172,6 @@
                     <div><span style="font-size:11px">RESET COCHE</span><div class="control-row"> <select id="sel-reset"></select> </div></div>
                 </div>
             </div>
-
             <div class="col-debug" id="debug-list">
                 <div style="color:#c00">Esperando mando...</div>
             </div>
@@ -225,12 +211,10 @@
             } else {
                 ui.touchLayer.style.display = 'none'; ui.mobileConfig.style.display = 'none';
             }
-
             const opts = [`<option value="none">---</option>`];
             for(let i=0; i<10; i++) opts.push(`<option value="axis-${i}">Axis ${i}</option>`);
             for(let i=0; i<20; i++) opts.push(`<option value="btn-${i}">Btn ${i}</option>`);
             const html = opts.join('');
-            
             ['Steer','Gas','Brake','Cam','Look','Reset'].forEach(key => {
                 ui['sel'+key].innerHTML = html; ui['sel'+key].value = config[key.toLowerCase()].id;
                 if(ui['inv'+key]) ui['inv'+key].checked = config[key.toLowerCase()].invert;
@@ -263,7 +247,6 @@
             requestAnimationFrame(updateMenuLoop);
             const gp = navigator.getGamepads ? navigator.getGamepads()[0] : null;
             if(!gp) { ui.debugList.innerHTML = "Conecta un mando..."; return; }
-
             let html = `<div style="margin-bottom:5px; color:#aaa">${gp.id}</div>`;
             gp.axes.forEach((v, i) => {
                 const w = ((v+1)/2)*100; const act = Math.abs(v)>0.1?'active-axis':'';
@@ -271,7 +254,6 @@
             });
             gp.buttons.forEach((b, i) => { if(b.pressed) html += `<div style="color:#0f0; font-size:10px">BTN ${i} ON</div>`; });
             ui.debugList.innerHTML = html;
-
             const s = processInput(Object.assign({}, config.steer, {id: ui.selSteer.value, invert: ui.invSteer.checked}), gp, false);
             const g = processInput(Object.assign({}, config.gas, {id: ui.selGas.value, invert: ui.invGas.checked}), gp, true);
             const b = processInput(Object.assign({}, config.brake, {id: ui.selBrake.value, invert: ui.invBrake.checked}), gp, true);
@@ -291,7 +273,6 @@
         ui.gamma.addEventListener('input', (e) => ui.valGamma.innerText = e.target.value);
         document.getElementById('settings-btn').addEventListener('click', () => { ui.modal.classList.remove('hidden'); updateMenuLoop(); });
         
-        // Touch Logic
         const touchInputs = { gas:0, brake:0, steer:0, look:0 };
         function setupMobileMode(mode) {
             config.mobileMode = mode;
@@ -330,7 +311,6 @@
 
         window.addEventListener('deviceorientation', (e)=>{ if(config.mobileMode==='gyro') { const val = (window.innerWidth>window.innerHeight) ? e.beta : e.gamma; if(val!=null) touchInputs.steer = -(Math.max(-30,Math.min(30, val))/30); } });
 
-        // 3D
         const scene = new THREE.Scene(); scene.background = new THREE.Color(0x1a1a1a); scene.fog = new THREE.Fog(0x1a1a1a, 20, 150);
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.05, 500);
         const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setSize(window.innerWidth, window.innerHeight); renderer.shadowMap.enabled = true; document.body.appendChild(renderer.domElement);
@@ -346,35 +326,24 @@
         chassisBody.addShape(new CANNON.Box(new CANNON.Vec3(0.75, 0.15, 2.2)), new CANNON.Vec3(0, 0.2, 0)); 
         chassisBody.position.set(0, 2, 0); chassisBody.angularDamping = 0.5; chassisBody.linearDamping = 0.05; chassisBody.allowSleep = false;
         
-        // --- COCHE GEOMETRY FIX (HUECO EN MEDIO) ---
         const carMesh = new THREE.Group();
         const redMat = new THREE.MeshStandardMaterial({ color: 0xff1100 });
         const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
 
-        // 1. Motor (Atrás)
         const rearBody = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 1.5), redMat);
         rearBody.position.set(0, 0.2, -1.2); rearBody.castShadow = true; carMesh.add(rearBody);
-
-        // 2. Pontones (Lados)
         const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 1.5), redMat);
         sideL.position.set(0.55, 0.2, 0.3); sideL.castShadow = true; carMesh.add(sideL);
         const sideR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 1.5), redMat);
         sideR.position.set(-0.55, 0.2, 0.3); sideR.castShadow = true; carMesh.add(sideR);
-
-        // 3. Nariz (Adelante)
         const nose = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.25, 1.8), redMat);
         nose.position.set(0, 0.2, 1.8); nose.castShadow = true; carMesh.add(nose);
-
-        // 4. Cockpit Visual (Solo respaldo y suelo)
         const seat = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 1.5), blackMat);
         seat.position.set(0, 0.1, 0.3); carMesh.add(seat);
         const headrest = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 0.2), blackMat);
         headrest.position.set(0, 0.4, -0.5); carMesh.add(headrest);
-
-        // Aleron
         const wing = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, 0.6), blackMat); 
         wing.position.set(0, 0.7, -1.9); carMesh.add(wing);
-        // Volante
         const wheelVis = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.02, 8, 16), new THREE.MeshStandardMaterial({color:0x333333})); 
         wheelVis.position.set(0, 0.6, 0.5); carMesh.add(wheelVis); 
         
@@ -404,7 +373,6 @@
                     inputs.brake = processInput(config.brake, gp, true);
                     let rawSteer = processInput(config.steer, gp, false);
                     inputs.steer = Math.pow(Math.abs(rawSteer), config.gamma) * Math.sign(rawSteer);
-
                     const getBtn = (cfg) => { if(cfg.id==='none')return 0; const idx=parseInt(cfg.id.split('-')[1]); return (cfg.id.startsWith('btn') ? gp.buttons[idx]?.pressed : Math.abs(gp.axes[idx])>0.5) ? 1 : 0; };
                     if (getBtn(config.cam)) { if(!state.cameraPressed) { state.cameraMode = (state.cameraMode === 'chase') ? 'cockpit' : 'chase'; state.cameraPressed = true; } } else state.cameraPressed = false;
                     inputs.look = getBtn(config.look);
@@ -434,16 +402,25 @@
             carMesh.position.copy(chassisBody.position); carMesh.quaternion.copy(chassisBody.quaternion);
             for(let i=0; i<4; i++){ vehicle.updateWheelTransform(i); wheelMeshes[i].position.copy(vehicle.wheelInfos[i].worldTransform.position); wheelMeshes[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion); }
 
+            // --- LÓGICA DE CÁMARA ANTIGUA RESTAURADA ---
             let offset, lookAt;
             if (state.cameraMode === 'chase') {
-                if (inputs.look) { offset = new THREE.Vector3(0, 3, 6).applyMatrix4(carMesh.matrixWorld); lookAt = carMesh.position.clone(); } 
-                else { offset = new THREE.Vector3(0, 2.5, -5.5).applyMatrix4(carMesh.matrixWorld); lookAt = new THREE.Vector3(0, 0.5, 5).applyMatrix4(carMesh.matrixWorld); }
-                camera.position.lerp(offset, 0.15); camera.lookAt(lookAt);
+                if (inputs.look) { 
+                    offset = new THREE.Vector3(0, 3.5, 7).applyMatrix4(carMesh.matrixWorld); 
+                    lookAt = carMesh.position.clone(); 
+                } else { 
+                    // Distancia clásica: 7 atrás, 3.5 arriba
+                    offset = new THREE.Vector3(0, 3.5, -7).applyMatrix4(carMesh.matrixWorld); 
+                    lookAt = new THREE.Vector3(0, 1, 5).applyMatrix4(carMesh.matrixWorld); 
+                }
+                // Suavizado (lerp) de la versión original
+                camera.position.lerp(offset, 0.1); 
+                camera.lookAt(lookAt);
             } else {
-                // CAMARA EN EL HUECO (Sin clipping)
-                offset = new THREE.Vector3(0, 0.95, 0.6).applyMatrix4(carMesh.matrixWorld);
+                // Vista Cockpit (Sin cambios para evitar clipping)
+                offset = new THREE.Vector3(0, 0.85, 0.2).applyMatrix4(carMesh.matrixWorld);
                 camera.position.copy(offset);
-                if (inputs.look) lookAt = new THREE.Vector3(0, 0.95, -10).applyMatrix4(carMesh.matrixWorld);
+                if (inputs.look) lookAt = new THREE.Vector3(0, 0.85, -10).applyMatrix4(carMesh.matrixWorld);
                 else lookAt = new THREE.Vector3(0, 0.8, 10).applyMatrix4(carMesh.matrixWorld);
                 camera.lookAt(lookAt);
             }
