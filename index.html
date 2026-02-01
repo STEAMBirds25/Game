@@ -436,7 +436,7 @@
                 offset = new THREE.Vector3(0, 0.85, 0.5).applyMatrix4(carMesh.matrixWorld);
                 camera.position.copy(offset);
                 if (inputs.look) lookAt = new THREE.Vector3(0, 0.85, -10).applyMatrix4(carMesh.matrixWorld);
-                else lookAt = new THREE.Vector3(0, 0.8, 15).applyMatrix4(carMesh.matrixWorld);
+                else lookAt = new THREE.Vector3(0, 1, 15).applyMatrix4(carMesh.matrixWorld);
                 camera.lookAt(lookAt);
             }
 
