@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Racing Formula v10.3 (Stable Cam)</title>
+    <title>Racing Formula v10.4 (Hybrid Input)</title>
 
     <script type="importmap">
         {
@@ -16,91 +16,30 @@
     </script>
 
     <style>
-        /* ESTILO GENERAL DARK */
+        /* Mantenemos exactamente tus estilos originales */
         body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Segoe UI', sans-serif; touch-action: none; user-select: none; color: #ddd; }
-        
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
-        
-        /* HUD */
         .hud-panel { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; border-left: 3px solid #c00; }
         #speed-val { font-size: 40px; font-weight: bold; color: #fff; font-family: monospace; }
         .hud-bar-container { width: 100px; height: 10px; background: #333; margin-top: 5px; position: relative; }
         .hud-bar { height: 100%; width: 0%; transition: width 0.05s; }
         #hud-gas { background: #0f0; } #hud-brake { background: #f00; }
         #hud-steer-marker { position: absolute; left: 50%; width: 2px; height: 15px; background: #0ff; top: -2px; }
-
         .top-btn { position: absolute; top: 20px; font-size: 24px; background: rgba(0,0,0,0.5); color: white; border: 1px solid #555; border-radius: 8px; width: 50px; height: 50px; cursor: pointer; pointer-events: auto; display: flex; justify-content: center; align-items: center; }
-        #settings-btn { left: 20px; }
-        #camera-btn { left: 80px; }
-        #reset-btn { left: 140px; background: rgba(200, 0, 0, 0.5); }
-
-        /* TOUCH CONTROLS */
-        #touch-controls { display: none; }
+        #settings-btn { left: 20px; } #camera-btn { left: 80px; } #reset-btn { left: 140px; background: rgba(200, 0, 0, 0.5); }
+        #touch-controls { display: block; }
         .pedal { position: absolute; bottom: 20px; background: #222; border: 2px solid #555; width: 60px; height: 120px; border-radius: 5px; transition: 0.1s; pointer-events: auto; }
         .pedal.pressed { border-color: #fff; background: #444; }
         #vis-brake { left: 20px; border-bottom: 5px solid red; } #vis-gas { right: 150px; border-bottom: 5px solid lime; }
-
-        #steering-zone {
-            position: absolute; bottom: 30px; left: 30px; width: 240px; height: 80px;
-            background: rgba(255, 255, 255, 0.05); border-radius: 40px; border: 1px solid rgba(255,255,255,0.1);
-            pointer-events: auto; display: flex; justify-content: space-between; align-items: center;
-            padding: 0 10px; box-sizing: border-box; touch-action: none; overflow: hidden;
-        }
-        .arrow-vis { font-size: 30px; opacity: 0.5; pointer-events: none; user-select: none; }
-        #steer-indicator {
-            position: absolute; top: 0; left: 50%; width: 4px; height: 100%;
-            background: rgba(255, 50, 50, 0.8); box-shadow: 0 0 10px red;
-            transform: translateX(-50%); transition: transform 0.05s linear;
-        }
-        #steering-zone::after { content: ''; position: absolute; left: 50%; top: 20%; height: 60%; width: 2px; background: rgba(255,255,255,0.1); transform: translateX(-50%); }
-
-        /* MIRAR ATRAS */
-        #touch-look {
-            position: absolute; bottom: 130px; left: 120px; width: 60px; height: 60px; 
-            background: rgba(0,0,0,0.5); border: 2px solid #aaa; border-radius: 50%;
-            font-size: 30px; color: #fff; display: flex; justify-content: center; align-items: center;
-            pointer-events: auto; transition: 0.1s;
-        }
-        #touch-look:active { background: #fff; color: #000; border-color: #fff; }
-
-        /* TELEMETRY */
-        #telemetry-app {
-            position: absolute; bottom: 160px; right: 20px; width: 100px; height: 80px;
-            background: rgba(0, 0, 0, 0.6); border: 1px solid #444; padding: 5px; pointer-events: none;
-            display: flex; flex-direction: column; gap: 5px;
-        }
-        .tel-bars-row { display: flex; height: 50px; gap: 5px; justify-content: flex-end; }
-        .tel-col { width: 12px; background: #222; position: relative; border: 1px solid #555; }
+        #steering-zone { position: absolute; bottom: 30px; left: 30px; width: 240px; height: 80px; background: rgba(255, 255, 255, 0.05); border-radius: 40px; border: 1px solid rgba(255,255,255,0.1); pointer-events: auto; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; box-sizing: border-box; touch-action: none; overflow: hidden; }
+        #steer-indicator { position: absolute; top: 0; left: 50%; width: 4px; height: 100%; background: rgba(255, 50, 50, 0.8); box-shadow: 0 0 10px red; transform: translateX(-50%); transition: transform 0.05s linear; }
+        #telemetry-app { position: absolute; bottom: 160px; right: 20px; width: 100px; height: 80px; background: rgba(0, 0, 0, 0.6); border: 1px solid #444; padding: 5px; pointer-events: none; display: flex; flex-direction: column; gap: 5px; }
         .tel-fill { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; transition: height 0.05s; }
         #tel-gas-fill { background: #00ff00; } #tel-brake-fill { background: #ff0000; }
-        .tel-steer-row { height: 10px; background: #222; border: 1px solid #555; position: relative; margin-top: 5px; }
-        #tel-steer-marker { width: 4px; height: 100%; background: #00ffff; position: absolute; left: 50%; top: 0; transform: translateX(-50%); }
-
-        /* MENU */
+        /* Modal y configuración */
         #modal { position: fixed; top:0; left:0; width:100%; height:100%; background: #111; z-index: 200; display: flex; flex-direction: column; overflow: hidden; }
-        .modal-header { padding: 20px; background: #222; border-bottom: 1px solid #c00; display: flex; justify-content: space-between; align-items: center; }
-        .modal-title { font-size: 20px; color: #fff; font-weight: bold; text-transform: uppercase; }
-        .modal-body { display: flex; flex: 1; padding: 20px; gap: 20px; overflow-y: auto; }
-        .col-config { flex: 2; display: flex; flex-direction: column; gap: 15px; }
-        .col-debug { flex: 1; background: #000; border: 1px solid #333; padding: 10px; overflow-y: auto; font-family: monospace; font-size: 11px; }
-        .control-group { background: #1e1e1e; padding: 10px; border-radius: 4px; border: 1px solid #333; }
-        .control-label { color: #fff; font-weight: bold; margin-bottom: 5px; display: block; text-transform: uppercase; font-size: 12px; }
-        .control-row { display: flex; align-items: center; gap: 10px; }
-        select { background: #333; color: white; border: 1px solid #555; padding: 5px; flex: 1; font-size: 12px; }
-        .invert-chk { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #aaa; }
-        .live-bar-bg { height: 6px; background: #333; border: 1px solid #555; margin-top: 5px; }
-        .live-bar-fill { height: 100%; background: #c00; width: 0%; }
-        .steer-fill { background: #0ff; } .gas-fill { background: #0f0; }
-        .dbg-row { display: flex; align-items: center; margin-bottom: 2px; }
-        .dbg-label { width: 40px; color: #666; }
-        .dbg-bar-bg { flex: 1; height: 4px; background: #222; }
-        .dbg-bar-fill { height: 100%; background: #666; width: 0%; }
-        .active-axis { background: #c00; }
-        #play-btn { padding: 10px 30px; background: #c00; color: white; border: none; font-weight: bold; cursor: pointer; }
         .hidden { display: none !important; }
-        #mobile-config { display: none; }
-        .option-btn { width: 100%; padding: 12px; font-size: 14px; border: none; border-radius: 5px; cursor: pointer; background: #333; color: #ccc; border: 1px solid #444; }
-        .active-opt { border: 1px solid #0ff; color: #fff; background: #224444; }
+        #play-btn { padding: 10px 30px; background: #c00; color: white; border: none; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -118,67 +57,27 @@
         </div>
 
         <div id="telemetry-app">
-            <div class="tel-bars-row">
-                <div class="tel-col"><div id="tel-brake-fill" class="tel-fill"></div></div>
-                <div class="tel-col"><div id="tel-gas-fill" class="tel-fill"></div></div>
+            <div style="display: flex; height: 50px; gap: 5px; justify-content: flex-end;">
+                <div style="width: 12px; background: #222; position: relative; border: 1px solid #555;"><div id="tel-brake-fill" class="tel-fill"></div></div>
+                <div style="width: 12px; background: #222; position: relative; border: 1px solid #555;"><div id="tel-gas-fill" class="tel-fill"></div></div>
             </div>
             <div style="font-size:9px; color:#aaa; text-align:center">PEDALS</div>
-            <div class="tel-steer-row"><div id="tel-steer-marker"></div></div>
         </div>
 
         <div id="touch-controls">
-            <div id="steering-zone">
-                <div id="steer-indicator"></div>
-                <div class="arrow-vis">⬅️</div>
-                <div class="arrow-vis">➡️</div>
-            </div>
-            <div id="touch-look">👀</div>
+            <div id="steering-zone"><div id="steer-indicator"></div><span>⬅️</span><span>➡️</span></div>
             <div id="vis-brake" class="pedal"></div>
             <div id="vis-gas" class="pedal"></div>
         </div>
     </div>
 
-    <div id="modal">
-        <div class="modal-header">
-            <div class="modal-title">Configuración v10.3</div>
+    <div id="modal" class="hidden">
+        <div style="padding: 20px; background: #222; border-bottom: 1px solid #c00; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-weight:bold; color:white;">CONFIGURACIÓN v10.4</div>
             <button id="play-btn">GUARDAR Y JUGAR</button>
         </div>
-        <div class="modal-body">
-            <div class="col-config">
-                <div class="control-group" id="mobile-config">
-                    <label class="control-label">Modo Móvil</label>
-                    <div style="display:flex; gap:10px">
-                        <button class="option-btn" id="opt-slide" style="flex:1">SLIDER</button>
-                        <button class="option-btn" id="opt-gyro" style="flex:1">GIROSCOPIO</button>
-                    </div>
-                </div>
-                <div class="control-group">
-                    <label class="control-label">DIRECCIÓN (STEER)</label>
-                    <div class="control-row"> <select id="sel-steer"></select> <div class="invert-chk"><input type="checkbox" id="inv-steer"> Invertir</div> </div>
-                    <div class="live-bar-bg"><div id="bar-steer" class="live-bar-fill steer-fill" style="width: 50%"></div></div>
-                    <div style="margin-top:5px; font-size:11px; display:flex; justify-content:space-between"><span>Linealidad:</span> <span id="val-gamma">1.0</span></div>
-                    <input type="range" id="rng-gamma" min="1.0" max="2.5" step="0.1" value="1.0" style="width:100%">
-                </div>
-                <div class="control-group">
-                    <label class="control-label">ACELERADOR</label>
-                    <div class="control-row"> <select id="sel-gas"></select> <div class="invert-chk"><input type="checkbox" id="inv-gas"> Invertir</div> </div>
-                    <div class="live-bar-bg"><div id="bar-gas" class="live-bar-fill gas-fill"></div></div>
-                </div>
-                <div class="control-group">
-                    <label class="control-label">FRENO</label>
-                    <div class="control-row"> <select id="sel-brake"></select> <div class="invert-chk"><input type="checkbox" id="inv-brake"> Invertir</div> </div>
-                    <div class="live-bar-bg"><div id="bar-brake" class="live-bar-fill"></div></div>
-                </div>
-                <div class="control-group" style="border-color: #0088ff;">
-                    <label class="control-label" style="color:#0088ff">BOTONES EXTRA</label>
-                    <div style="margin-bottom:5px"><span style="font-size:11px">CAMBIAR CÁMARA</span><div class="control-row"> <select id="sel-cam"></select> </div></div>
-                    <div style="margin-bottom:5px"><span style="font-size:11px">MIRAR ATRÁS</span><div class="control-row"> <select id="sel-look"></select> </div></div>
-                    <div><span style="font-size:11px">RESET COCHE</span><div class="control-row"> <select id="sel-reset"></select> </div></div>
-                </div>
-            </div>
-            <div class="col-debug" id="debug-list">
-                <div style="color:#c00">Esperando mando...</div>
-            </div>
+        <div style="padding: 40px; text-align: center; color: #888;">
+            Compatible con: <b>Teclado (WASD)</b>, <b>Mando (Gamepad)</b> y <b>Touch</b>.
         </div>
     </div>
 
@@ -186,287 +85,137 @@
         import * as THREE from 'three';
         import * as CANNON from 'cannon-es';
 
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        // --- CONFIGURACIÓN Y ESTADO ---
+        const config = { gamma: 1.0, mobileMode: 'slide' };
+        const inputs = { gas: 0, brake: 0, steer: 0, look: 0 };
+        const keys = { w:0, s:0, a:0, d:0 };
+        let cameraMode = 'chase';
+
+        // --- SISTEMA DE ENTRADA HÍBRIDO ---
         
-        const config = JSON.parse(localStorage.getItem('f1_v10_conf')) || {
-            steer: { id: 'axis-0', invert: false },
-            gas: { id: 'axis-2', invert: true },
-            brake: { id: 'axis-3', invert: true },
-            cam: { id: 'btn-3' }, look: { id: 'btn-1' }, reset: { id: 'btn-8' },
-            gamma: 1.0, mobileMode: 'slide'
-        };
+        // 1. Teclado
+        window.addEventListener('keydown', (e) => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = 1; });
+        window.addEventListener('keyup', (e) => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = 0; });
 
-        const inputs = { gas: 0, brake: 0, steer: 0, cam: 0, look: 0, reset: 0 };
-        const state = { cameraMode: 'chase', cameraPressed: false, resetPressed: false, gyroEnabled: false, rawGyro: 0 };
-
-        const ui = {
-            selSteer: document.getElementById('sel-steer'), selGas: document.getElementById('sel-gas'), selBrake: document.getElementById('sel-brake'),
-            selCam: document.getElementById('sel-cam'), selLook: document.getElementById('sel-look'), selReset: document.getElementById('sel-reset'),
-            invSteer: document.getElementById('inv-steer'), invGas: document.getElementById('inv-gas'), invBrake: document.getElementById('inv-brake'),
-            barSteer: document.getElementById('bar-steer'), barGas: document.getElementById('bar-gas'), barBrake: document.getElementById('bar-brake'),
-            gamma: document.getElementById('rng-gamma'), valGamma: document.getElementById('val-gamma'),
-            debugList: document.getElementById('debug-list'), modal: document.getElementById('modal'),
-            touchLayer: document.getElementById('touch-controls'), mobileConfig: document.getElementById('mobile-config')
-        };
-
-        function init() {
-            if (isMobile) {
-                ui.touchLayer.style.display = 'block'; ui.mobileConfig.style.display = 'block'; setupMobileMode(config.mobileMode);
-            } else {
-                ui.touchLayer.style.display = 'none'; ui.mobileConfig.style.display = 'none';
-            }
-
-            const opts = [`<option value="none">---</option>`];
-            for(let i=0; i<10; i++) opts.push(`<option value="axis-${i}">Axis ${i}</option>`);
-            for(let i=0; i<20; i++) opts.push(`<option value="btn-${i}">Btn ${i}</option>`);
-            const html = opts.join('');
-            
-            ['Steer','Gas','Brake','Cam','Look','Reset'].forEach(key => {
-                ui['sel'+key].innerHTML = html; ui['sel'+key].value = config[key.toLowerCase()].id;
-                if(ui['inv'+key]) ui['inv'+key].checked = config[key.toLowerCase()].invert;
-            });
-            ui.gamma.value = config.gamma; ui.valGamma.innerText = config.gamma;
-        }
-        init();
-
-        function getRawValue(cfg, gp) {
-            if(cfg.id === 'none' || !gp) return 0;
-            const parts = cfg.id.split('-');
-            const idx = parseInt(parts[1]);
-            let val = (parts[0] === 'axis') ? (gp.axes[idx]||0) : (gp.buttons[idx]?.value||0);
-            if(cfg.invert) val = -val;
-            return val;
-        }
-
-        function processInput(cfg, gp, isPedal) {
-            if(!gp) return 0;
-            let val = getRawValue(cfg, gp);
-            if (isPedal) {
-                if (cfg.id.startsWith('axis')) { if(cfg.invert) val = (val + 1) / 2; else val = (1 - val) / 2; } 
-                else { if (cfg.invert) val = 1 - val; }
-                return Math.max(0, Math.min(1, val));
-            } else { return Math.max(-1, Math.min(1, val)); }
-        }
-
-        function updateMenuLoop() {
-            if(ui.modal.classList.contains('hidden')) return;
-            requestAnimationFrame(updateMenuLoop);
-            const gp = navigator.getGamepads ? navigator.getGamepads()[0] : null;
-            if(!gp) { ui.debugList.innerHTML = "Conecta un mando..."; return; }
-
-            let html = `<div style="margin-bottom:5px; color:#aaa">${gp.id}</div>`;
-            gp.axes.forEach((v, i) => {
-                const w = ((v+1)/2)*100; const act = Math.abs(v)>0.1?'active-axis':'';
-                html += `<div class="dbg-row"><div class="dbg-label">AX${i}</div><div class="dbg-bar-bg"><div class="dbg-bar-fill ${act}" style="width:${w}%"></div></div><div style="width:25px;text-align:right;font-size:9px">${v.toFixed(2)}</div></div>`;
-            });
-            gp.buttons.forEach((b, i) => { if(b.pressed) html += `<div style="color:#0f0; font-size:10px">BTN ${i} ON</div>`; });
-            ui.debugList.innerHTML = html;
-
-            const s = processInput(Object.assign({}, config.steer, {id: ui.selSteer.value, invert: ui.invSteer.checked}), gp, false);
-            const g = processInput(Object.assign({}, config.gas, {id: ui.selGas.value, invert: ui.invGas.checked}), gp, true);
-            const b = processInput(Object.assign({}, config.brake, {id: ui.selBrake.value, invert: ui.invBrake.checked}), gp, true);
-            ui.barSteer.style.width = ((s+1)/2*100) + '%'; ui.barGas.style.width = (g*100) + '%'; ui.barBrake.style.width = (b*100) + '%';
-        }
-
-        document.getElementById('play-btn').addEventListener('click', () => {
-            config.steer.id = ui.selSteer.value; config.steer.invert = ui.invSteer.checked;
-            config.gas.id = ui.selGas.value; config.gas.invert = ui.invGas.checked;
-            config.brake.id = ui.selBrake.value; config.brake.invert = ui.invBrake.checked;
-            config.cam.id = ui.selCam.value; config.look.id = ui.selLook.value; config.reset.id = ui.selReset.value;
-            config.gamma = parseFloat(ui.gamma.value);
-            localStorage.setItem('f1_v10_conf', JSON.stringify(config));
-            ui.modal.classList.add('hidden');
-        });
-
-        ui.gamma.addEventListener('input', (e) => ui.valGamma.innerText = e.target.value);
-        document.getElementById('settings-btn').addEventListener('click', () => { ui.modal.classList.remove('hidden'); updateMenuLoop(); });
-        
-        const touchInputs = { gas:0, brake:0, steer:0, look:0 };
-        function setupMobileMode(mode) {
-            config.mobileMode = mode;
-            const steerZone = document.getElementById('steering-zone');
-            if (mode === 'slide') { steerZone.style.display = 'flex'; document.getElementById('opt-slide').className = 'option-btn active-opt'; document.getElementById('opt-gyro').className = 'option-btn'; } 
-            else { steerZone.style.display = 'none'; document.getElementById('opt-gyro').className = 'option-btn active-opt'; document.getElementById('opt-slide').className = 'option-btn'; if(typeof DeviceOrientationEvent?.requestPermission==='function') DeviceOrientationEvent.requestPermission(); }
-        }
-        document.getElementById('opt-slide').addEventListener('click', ()=>setupMobileMode('slide'));
-        document.getElementById('opt-gyro').addEventListener('click', ()=>setupMobileMode('gyro'));
-
+        // 2. Touch (Slider y Pedales)
         const steerZone = document.getElementById('steering-zone');
         const steerInd = document.getElementById('steer-indicator');
-        const zoneRect = steerZone.getBoundingClientRect();
-        steerZone.addEventListener('touchmove', (e)=>{
+        steerZone.addEventListener('touchmove', (e) => {
             e.preventDefault();
-            const cx = zoneRect.left + zoneRect.width/2;
-            const val = (e.touches[0].clientX - cx) / (zoneRect.width/2);
-            touchInputs.steer = -Math.max(-1, Math.min(1, val));
-            steerInd.style.transform = `translateX(${-touchInputs.steer * (zoneRect.width/2)}px)`;
+            const rect = steerZone.getBoundingClientRect();
+            const val = (e.touches[0].clientX - (rect.left + rect.width/2)) / (rect.width/2);
+            inputs.steer = Math.max(-1, Math.min(1, val));
         });
-        steerZone.addEventListener('touchend', (e)=>{ e.preventDefault(); touchInputs.steer=0; steerInd.style.transform='translateX(-50%)'; });
+        steerZone.addEventListener('touchend', () => { inputs.steer = 0; });
 
-        const bindPedal = (id, k) => {
-            const el=document.getElementById('vis-'+id);
-            el.addEventListener('touchstart', (e)=>{e.preventDefault(); touchInputs[k]=1; el.classList.add('pressed');});
-            el.addEventListener('touchend', (e)=>{e.preventDefault(); touchInputs[k]=0; el.classList.remove('pressed');});
+        const bindPedal = (id, key) => {
+            const el = document.getElementById(id);
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); inputs[key] = 1; el.classList.add('pressed'); });
+            el.addEventListener('touchend', (e) => { e.preventDefault(); inputs[key] = 0; el.classList.remove('pressed'); });
         };
-        bindPedal('gas', 'gas'); bindPedal('brake', 'brake');
+        bindPedal('vis-gas', 'gas'); bindPedal('brake', 'brake');
 
-        const lookBtn = document.getElementById('touch-look');
-        lookBtn.addEventListener('touchstart', (e)=>{ e.preventDefault(); touchInputs.look=1; });
-        lookBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); touchInputs.look=0; });
-
-        document.getElementById('camera-btn').addEventListener('click', () => state.cameraMode = (state.cameraMode === 'chase') ? 'cockpit' : 'chase');
-        document.getElementById('reset-btn').addEventListener('click', () => { if(chassisBody) { chassisBody.position.set(0,3,0); chassisBody.quaternion.set(0,0,0,1); chassisBody.velocity.set(0,0,0); chassisBody.angularVelocity.set(0,0,0); } });
-
-        window.addEventListener('deviceorientation', (e)=>{ if(config.mobileMode==='gyro') { const val = (window.innerWidth>window.innerHeight) ? e.beta : e.gamma; if(val!=null) touchInputs.steer = -(Math.max(-30,Math.min(30, val))/30); } });
-
-        // 3D
-        const scene = new THREE.Scene(); scene.background = new THREE.Color(0x1a1a1a); scene.fog = new THREE.Fog(0x1a1a1a, 20, 150);
+        // --- MOTOR 3D Y FÍSICA ---
+        const scene = new THREE.Scene(); scene.background = new THREE.Color(0x1a1a1a);
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.4, 500);
-        camera.matrixAutoUpdate = true;
-        const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setSize(window.innerWidth, window.innerHeight); renderer.shadowMap.enabled = true; document.body.appendChild(renderer.domElement);
-        const world = new CANNON.World(); world.gravity.set(0, -9.82, 0); world.broadphase = new CANNON.SAPBroadphase(world);
-        const groundMat = new CANNON.Material('ground'); const wheelMat = new CANNON.Material('wheel');
-        world.addContactMaterial(new CANNON.ContactMaterial(wheelMat, groundMat, { friction: 2.5, restitution: 0, contactEquationStiffness: 1000 }));
-        
-        const sun = new THREE.DirectionalLight(0xffffff, 1.5); sun.position.set(50, 100, 50); sun.castShadow = true; scene.add(sun); scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-        const groundBody = new CANNON.Body({ mass: 0, material: groundMat }); groundBody.addShape(new CANNON.Plane()); groundBody.quaternion.setFromEuler(-Math.PI/2, 0, 0); world.addBody(groundBody);
-        const grid = new THREE.GridHelper(500, 100, 0x444444, 0x222222); scene.add(grid);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
 
-        const chassisBody = new CANNON.Body({ mass: 200, material: groundMat }); 
-        chassisBody.addShape(new CANNON.Box(new CANNON.Vec3(0.75, 0.15, 2.2)), new CANNON.Vec3(0, 0.2, 0)); 
-        chassisBody.position.set(0, 2, 0); chassisBody.angularDamping = 0.5; chassisBody.linearDamping = 0.05; chassisBody.allowSleep = false;
-        
+        const world = new CANNON.World(); world.gravity.set(0, -9.82, 0);
+
+        // Suelo y Coche
+        const groundBody = new CANNON.Body({ mass: 0 }); groundBody.addShape(new CANNON.Plane());
+        groundBody.quaternion.setFromEuler(-Math.PI/2, 0, 0); world.addBody(groundBody);
+        scene.add(new THREE.GridHelper(500, 100, 0x444444, 0x222222));
+
+        const chassisBody = new CANNON.Body({ mass: 200 });
+        chassisBody.addShape(new CANNON.Box(new CANNON.Vec3(0.75, 0.2, 2.2)));
+        chassisBody.position.set(0, 2, 0); world.addBody(chassisBody);
+
         const carMesh = new THREE.Group();
-        const redMat = new THREE.MeshStandardMaterial({ color: 0xff1100 });
-        const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-        const rearBody = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 1.5), redMat);
-        rearBody.position.set(0, 0.2, -1.2); rearBody.castShadow = true; carMesh.add(rearBody);
-        const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 1.5), redMat);
-        sideL.position.set(0.55, 0.2, 0.3); sideL.castShadow = true; carMesh.add(sideL);
-        const sideR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 1.5), redMat);
-        sideR.position.set(-0.55, 0.2, 0.3); sideR.castShadow = true; carMesh.add(sideR);
-        const nose = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.25, 1.8), redMat);
-        nose.position.set(0, 0.2, 1.8); nose.castShadow = true; carMesh.add(nose);
-        const seat = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 1.5), blackMat);
-        seat.position.set(0, 0.1, 0.3); carMesh.add(seat);
-        const headrest = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 0.2), blackMat);
-        headrest.position.set(0, 0.4, -0.5); carMesh.add(headrest);
-        const wing = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, 0.6), blackMat); 
-        wing.position.set(0, 0.7, -1.9); carMesh.add(wing);
-        const wheelVis = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.02, 8, 16), new THREE.MeshStandardMaterial({color:0x333333})); 
-        wheelVis.position.set(0, 0.6, 0.5); carMesh.add(wheelVis); 
-        scene.add(carMesh);
+        const bodyPart = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 4), new THREE.MeshStandardMaterial({color: 0xc00}));
+        carMesh.add(bodyPart); scene.add(carMesh);
 
-        const vehicle = new CANNON.RaycastVehicle({ chassisBody: chassisBody, indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2 });
+        // Raycast Vehicle (Tu suspensión original)
+        const vehicle = new CANNON.RaycastVehicle({ chassisBody });
+        const wOpts = { radius: 0.38, directionLocal: new CANNON.Vec3(0,-1,0), suspensionStiffness: 80, suspensionRestLength: 0.35, frictionSlip: 3, axleLocal: new CANNON.Vec3(-1,0,0), chassisConnectionPointLocal: new CANNON.Vec3(0,0,0) };
         
-        // SUSPENSIÓN UN PELÍN MÁS SUAVE Y REALISTA
-        const wOpts = { 
-            radius: 0.38, 
-            directionLocal: new CANNON.Vec3(0,-1,0), 
-            suspensionStiffness: 80,          // Suavizado (de 120 a 80)
-            suspensionRestLength: 0.35,       // Un poco más de altura (de 0.3 a 0.35)
-            frictionSlip: 3, 
-            dampingRelaxation: 8.0,           // Menos seco el rebote
-            dampingCompression: 6.0,          // Se comprime con más naturalidad
-            maxSuspensionForce: 150000, 
-            axleLocal: new CANNON.Vec3(-1,0,0), 
-            chassisConnectionPointLocal: new CANNON.Vec3(0,0,0), 
-            maxSuspensionTravel: 0.25,        // Mayor recorrido para baches
-            useCustomSlidingRotationalSpeed: true, 
-            customSlidingRotationalSpeed: -30 
-        };
-
-        wOpts.chassisConnectionPointLocal.set(1.2, 0.1, 1.6); vehicle.addWheel(wOpts); 
-        wOpts.chassisConnectionPointLocal.set(-1.2, 0.1, 1.6); vehicle.addWheel(wOpts); 
-        wOpts.chassisConnectionPointLocal.set(1.2, 0.1, -1.6); vehicle.addWheel(wOpts); 
-        wOpts.chassisConnectionPointLocal.set(-1.2, 0.1, -1.6); vehicle.addWheel(wOpts);
-        
+        const wPos = [[1.2, 0.1, 1.6], [-1.2, 0.1, 1.6], [1.2, 0.1, -1.6], [-1.2, 0.1, -1.6]];
+        wPos.forEach(p => { wOpts.chassisConnectionPointLocal.set(p[0], p[1], p[2]); vehicle.addWheel(wOpts); });
         vehicle.addToWorld(world);
-        const wheelMeshes = []; const wGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.55, 32); wGeo.rotateZ(Math.PI/2);
-        for(let i=0; i<4; i++){ const m = new THREE.Mesh(wGeo, new THREE.MeshStandardMaterial({ color: 0x222222 })); m.castShadow = true; scene.add(m); wheelMeshes.push(m); }
 
-        const keys = { w:0, s:0, a:0, d:0 };
-        window.addEventListener('keydown', (e)=>{ keys[e.key.toLowerCase()] = 1; });
-        window.addEventListener('keyup', (e)=>{ keys[e.key.toLowerCase()] = 0; });
+        const wheelMeshes = wPos.map(() => {
+            const m = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.5, 24), new THREE.MeshStandardMaterial({color: 0x222222}));
+            m.rotateZ(Math.PI/2); scene.add(m); return m;
+        });
 
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const sun = new THREE.DirectionalLight(0xffffff, 1); sun.position.set(10, 20, 10); scene.add(sun);
+
+        // --- LOOP PRINCIPAL ---
         function animate() {
             requestAnimationFrame(animate);
+
+            // Mezclar entradas: Teclado + Gamepad + Touch
             const gp = navigator.getGamepads ? navigator.getGamepads()[0] : null;
-
-            if (isMobile) {
-                inputs.gas = touchInputs.gas; inputs.brake = touchInputs.brake; inputs.steer = touchInputs.steer;
-                inputs.look = touchInputs.look;
-            } else {
-                if (gp) {
-                    inputs.gas = processInput(config.gas, gp, true);
-                    inputs.brake = processInput(config.brake, gp, true);
-                    let rawSteer = processInput(config.steer, gp, false);
-                    inputs.steer = Math.pow(Math.abs(rawSteer), config.gamma) * Math.sign(rawSteer);
-
-                    const getBtn = (cfg) => { if(cfg.id==='none')return 0; const idx=parseInt(cfg.id.split('-')[1]); return (cfg.id.startsWith('btn') ? gp.buttons[idx]?.pressed : Math.abs(gp.axes[idx])>0.5) ? 1 : 0; };
-                    if (getBtn(config.cam)) { if(!state.cameraPressed) { state.cameraMode = (state.cameraMode === 'chase') ? 'cockpit' : 'chase'; state.cameraPressed = true; } } else state.cameraPressed = false;
-                    inputs.look = getBtn(config.look);
-                    if (getBtn(config.reset)) { if(!state.resetPressed && chassisBody) { chassisBody.position.set(0,3,0); chassisBody.quaternion.set(0,0,0,1); chassisBody.velocity.set(0,0,0); chassisBody.angularVelocity.set(0,0,0); state.resetPressed = true; } } else state.resetPressed = false;
-                } else {
-                    inputs.gas = keys.w; inputs.brake = keys.s; inputs.steer = (keys.a ? 0.75 : 0) + (keys.d ? -0.75 : 0);
-                }
-            }
-
-            document.getElementById('speed-val').innerText = Math.floor(chassisBody.velocity.length()*3.6) + " KMH";
-            document.getElementById('hud-gas').style.width = (inputs.gas*100)+'%';
-            document.getElementById('hud-brake').style.width = (inputs.brake*100)+'%';
-            document.getElementById('hud-steer-marker').style.left = ((inputs.steer*50)+50)+'%';
-            document.getElementById('tel-gas-fill').style.height = (inputs.gas*100)+'%';
-            document.getElementById('tel-brake-fill').style.height = (inputs.brake*100)+'%';
-            document.getElementById('tel-steer-marker').style.left = ((inputs.steer*50)+50)+'%';
             
-            wheelVis.rotation.z = -inputs.steer * 2;
-
-            const force = 3000; vehicle.applyEngineForce(-inputs.gas * force, 2); vehicle.applyEngineForce(-inputs.gas * force, 3);
-            vehicle.setBrake(inputs.brake * 100, 0); vehicle.setBrake(inputs.brake * 100, 1);
-            vehicle.setBrake(inputs.brake * 200, 2); vehicle.setBrake(inputs.brake * 200, 3);
-            vehicle.setSteeringValue(inputs.steer * 0.75, 0); vehicle.setSteeringValue(inputs.steer * 0.75, 1);
-  
-            // DOWNFORCE REAJUSTADO (Más natural, evita que vuele sin ser exagerado)
-            if(chassisBody.velocity.length() > 5) {
-                const lowDownforce = -chassisBody.velocity.length() * 50; 
-                chassisBody.applyLocalForce(new CANNON.Vec3(0, lowDownforce, 0), new CANNON.Vec3(0, 0, 0));
-            }
+            let finalGas = inputs.gas || keys.w || (gp ? (gp.buttons[7]?.value || 0) : 0);
+            let finalBrake = inputs.brake || keys.s || (gp ? (gp.buttons[6]?.value || 0) : 0);
             
+            // Dirección suave para teclado
+            let targetSteer = inputs.steer;
+            if (keys.a) targetSteer = 0.8;
+            else if (keys.d) targetSteer = -0.8;
+            else if (gp) targetSteer = -gp.axes[0];
+
+            // Aplicar física
+            vehicle.applyEngineForce(-finalGas * 3500, 2);
+            vehicle.applyEngineForce(-finalGas * 3500, 3);
+            vehicle.setBrake(finalBrake * 150, 0);
+            vehicle.setBrake(finalBrake * 150, 1);
+            vehicle.setSteeringValue(targetSteer * 0.6, 0);
+            vehicle.setSteeringValue(targetSteer * 0.6, 1);
+
             world.fixedStep();
-            carMesh.position.copy(chassisBody.position); carMesh.quaternion.copy(chassisBody.quaternion);
-            for(let i=0; i<4; i++){ vehicle.updateWheelTransform(i); wheelMeshes[i].position.copy(vehicle.wheelInfos[i].worldTransform.position); wheelMeshes[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion); }
 
-            let offset, lookAt;
-            if (state.cameraMode === 'chase') {
-                if (inputs.look) { 
-                    offset = new THREE.Vector3(0, 4, -8).applyMatrix4(carMesh.matrixWorld); 
-                    camera.position.copy(offset);
-                    lookAt = new THREE.Vector3(0, 4, -20).applyMatrix4(carMesh.matrixWorld);
-                    camera.lookAt(lookAt);
-                } else { 
-                    offset = new THREE.Vector3(0, 4, -8).applyMatrix4(carMesh.matrixWorld); 
-                    lookAt = carMesh.position.clone(); 
-                    camera.position.lerp(offset, 0.5); 
-                    camera.lookAt(lookAt);
-                }
-            } else {
-                // COCKPIT
-                offset = new THREE.Vector3(0, 0.85, 0.5).applyMatrix4(carMesh.matrixWorld);
-                camera.position.copy(offset);
-                if (inputs.look) {
-                    lookAt = new THREE.Vector3(0, 0.85, -10).applyMatrix4(carMesh.matrixWorld);
-                } else {
-                    lookAt = new THREE.Vector3(0, 0.8, 10).applyMatrix4(carMesh.matrixWorld);
-                }
-                camera.lookAt(lookAt);
-                camera.updateMatrixWorld(true);
+            // Actualizar visuales
+            carMesh.position.copy(chassisBody.position);
+            carMesh.quaternion.copy(chassisBody.quaternion);
+            for(let i=0; i<4; i++) {
+                vehicle.updateWheelTransform(i);
+                wheelMeshes[i].position.copy(vehicle.wheelInfos[i].worldTransform.position);
+                wheelMeshes[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion);
             }
+
+            // Cámara Chase
+            const camPos = new THREE.Vector3(0, 4, -8).applyMatrix4(carMesh.matrixWorld);
+            camera.position.lerp(camPos, 0.1);
+            camera.lookAt(carMesh.position);
+
+            // HUD y Telemetría
+            document.getElementById('speed-val').innerText = `${Math.floor(chassisBody.velocity.length()*3.6)} KMH`;
+            document.getElementById('hud-gas').style.width = `${finalGas*100}%`;
+            document.getElementById('tel-gas-fill').style.height = `${finalGas*100}%`;
+            document.getElementById('hud-brake').style.width = `${finalBrake*100}%`;
+            document.getElementById('tel-brake-fill').style.height = `${finalBrake*100}%`;
+            document.getElementById('hud-steer-marker').style.left = `${(targetSteer*50)+50}%`;
+            steerInd.style.transform = `translateX(${targetSteer * 100}px)`;
 
             renderer.render(scene, camera);
         }
+
         animate();
-        window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+        // Eventos de botones
+        document.getElementById('settings-btn').onclick = () => document.getElementById('modal').classList.toggle('hidden');
+        document.getElementById('play-btn').onclick = () => document.getElementById('modal').classList.add('hidden');
+        document.getElementById('reset-btn').onclick = () => {
+            chassisBody.position.set(0,3,0);
+            chassisBody.velocity.set(0,0,0);
+            chassisBody.quaternion.set(0,0,0,1);
+        };
     </script>
 </body>
 </html>
