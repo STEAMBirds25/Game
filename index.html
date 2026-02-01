@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1: MASTER CALIBRATION (AXLES)</title>
+    <title>F1: INDIVIDUAL WHEEL CALIBRATION</title>
 
     <script type="importmap">
         {
@@ -16,21 +16,33 @@
     </script>
 
     <style>
-        body { margin: 0; overflow: hidden; background: #222; font-family: 'Segoe UI', sans-serif; user-select: none; -webkit-user-select: none; }
+        body { margin: 0; overflow: hidden; background: #222; font-family: 'Segoe UI', sans-serif; user-select: none; }
         
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
 
-        /* CALIBRATOR PANEL (MÁS GRANDE PARA MAS CONTROLES) */
+        /* PANEL CON SCROLL */
         #debug-panel {
-            position: absolute; top: 60px; right: 10px; width: 280px; max-height: 80vh; overflow-y: auto;
-            background: rgba(0, 20, 60, 0.95); color: white; padding: 10px;
+            position: absolute; top: 60px; right: 10px; width: 290px;
+            max-height: 85vh; overflow-y: auto; /* Scroll si es muy alto */
+            background: rgba(0, 10, 30, 0.95); color: white; padding: 10px;
             border: 2px solid cyan; border-radius: 8px; font-size: 11px;
-            z-index: 5000; pointer-events: auto; display: flex; flex-direction: column; gap: 4px;
+            z-index: 5000; pointer-events: auto; display: flex; flex-direction: column; gap: 2px;
+            box-shadow: -5px 5px 15px rgba(0,0,0,0.5);
         }
-        .debug-row { display: flex; justify-content: space-between; align-items: center; }
-        input[type=range] { width: 120px; cursor: pointer; }
-        h3 { margin: 0 0 5px 0; text-align: center; color: cyan; border-bottom: 1px solid cyan; }
-        .section-title { color: yellow; font-weight: bold; margin-top: 8px; border-top: 1px solid #555; padding-top: 4px; text-align: center;}
+        
+        /* Scrollbar styling */
+        #debug-panel::-webkit-scrollbar { width: 8px; }
+        #debug-panel::-webkit-scrollbar-track { background: #000; }
+        #debug-panel::-webkit-scrollbar-thumb { background: #0aa; border-radius: 4px; }
+
+        .debug-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+        input[type=range] { width: 100px; cursor: pointer; height: 10px; }
+        h3 { margin: 0 0 5px 0; text-align: center; color: cyan; border-bottom: 1px solid cyan; padding-bottom: 5px; }
+        
+        .section-header { 
+            background: #004466; color: yellow; font-weight: bold; 
+            margin-top: 5px; padding: 3px; text-align: center; border-radius: 4px; 
+        }
 
         /* GAME UI */
         .top-bar { padding: 15px; display: flex; gap: 10px; pointer-events: auto; }
@@ -55,23 +67,39 @@
 </head>
 <body>
 
-    <!-- PANEL DE CALIBRACIÓN AVANZADO -->
+    <!-- PANEL DE CALIBRACIÓN INDIVIDUAL -->
     <div id="debug-panel">
-        <h3>🔧 CALIBRADOR DE EJES</h3>
+        <h3>🔧 CALIBRADOR DE RUEDAS</h3>
         
-        <div class="section-title">EJE DELANTERO (FRONT)</div>
-        <div class="debug-row"><span>DISTANCIA Z:</span> <input type="range" id="sl-fz" min="0.5" max="6.0" step="0.1" value="1.6"> <span id="val-fz">1.6</span></div>
-        <div class="debug-row"><span>ANCHO X:</span> <input type="range" id="sl-fx" min="0.5" max="3.0" step="0.05" value="1.1"> <span id="val-fx">1.1</span></div>
-        <div class="debug-row"><span>ALTURA Y:</span> <input type="range" id="sl-fy" min="-1.0" max="1.5" step="0.05" value="0.2"> <span id="val-fy">0.2</span></div>
-        <div class="debug-row"><span>RADIO HITBOX:</span> <input type="range" id="sl-fr" min="0.1" max="1.5" step="0.01" value="0.38"> <span id="val-fr">0.38</span></div>
+        <!-- RUEDA 0: DELANTERA IZQUIERDA -->
+        <div class="section-header">FL (DEL IZQ)</div>
+        <div class="debug-row"><span>ANCHO X:</span> <input type="range" id="sl-0-x" min="0.5" max="3.0" step="0.05" value="1.1"> <span id="val-0-x">1.1</span></div>
+        <div class="debug-row"><span>ALTURA Y:</span> <input type="range" id="sl-0-y" min="-1.0" max="1.5" step="0.05" value="0.2"> <span id="val-0-y">0.2</span></div>
+        <div class="debug-row"><span>LARGO Z:</span> <input type="range" id="sl-0-z" min="0.0" max="8.0" step="0.1" value="1.6"> <span id="val-0-z">1.6</span></div>
+        <div class="debug-row"><span>RADIO:</span> <input type="range" id="sl-0-r" min="0.1" max="1.5" step="0.01" value="0.38"> <span id="val-0-r">0.38</span></div>
 
-        <div class="section-title">EJE TRASERO (REAR)</div>
-        <div class="debug-row"><span>DISTANCIA Z:</span> <input type="range" id="sl-rz" min="0.5" max="6.0" step="0.1" value="1.6"> <span id="val-rz">1.6</span></div>
-        <div class="debug-row"><span>ANCHO X:</span> <input type="range" id="sl-rx" min="0.5" max="3.0" step="0.05" value="1.1"> <span id="val-rx">1.1</span></div>
-        <div class="debug-row"><span>ALTURA Y:</span> <input type="range" id="sl-ry" min="-1.0" max="1.5" step="0.05" value="0.2"> <span id="val-ry">0.2</span></div>
-        <div class="debug-row"><span>RADIO HITBOX:</span> <input type="range" id="sl-rr" min="0.1" max="1.5" step="0.01" value="0.5"> <span id="val-rr">0.50</span></div>
+        <!-- RUEDA 1: DELANTERA DERECHA -->
+        <div class="section-header">FR (DEL DER)</div>
+        <div class="debug-row"><span>ANCHO X:</span> <input type="range" id="sl-1-x" min="0.5" max="3.0" step="0.05" value="1.1"> <span id="val-1-x">1.1</span></div>
+        <div class="debug-row"><span>ALTURA Y:</span> <input type="range" id="sl-1-y" min="-1.0" max="1.5" step="0.05" value="0.2"> <span id="val-1-y">0.2</span></div>
+        <div class="debug-row"><span>LARGO Z:</span> <input type="range" id="sl-1-z" min="0.0" max="8.0" step="0.1" value="1.6"> <span id="val-1-z">1.6</span></div>
+        <div class="debug-row"><span>RADIO:</span> <input type="range" id="sl-1-r" min="0.1" max="1.5" step="0.01" value="0.38"> <span id="val-1-r">0.38</span></div>
 
-        <div class="section-title">VISUALES</div>
+        <!-- RUEDA 2: TRASERA IZQUIERDA -->
+        <div class="section-header">RL (TRAS IZQ)</div>
+        <div class="debug-row"><span>ANCHO X:</span> <input type="range" id="sl-2-x" min="0.5" max="3.0" step="0.05" value="1.1"> <span id="val-2-x">1.1</span></div>
+        <div class="debug-row"><span>ALTURA Y:</span> <input type="range" id="sl-2-y" min="-1.0" max="1.5" step="0.05" value="0.2"> <span id="val-2-y">0.2</span></div>
+        <div class="debug-row"><span>LARGO Z:</span> <input type="range" id="sl-2-z" min="0.0" max="8.0" step="0.1" value="1.6"> <span id="val-2-z">1.6</span></div>
+        <div class="debug-row"><span>RADIO:</span> <input type="range" id="sl-2-r" min="0.1" max="1.5" step="0.01" value="0.5"> <span id="val-2-r">0.50</span></div>
+
+        <!-- RUEDA 3: TRASERA DERECHA -->
+        <div class="section-header">RR (TRAS DER)</div>
+        <div class="debug-row"><span>ANCHO X:</span> <input type="range" id="sl-3-x" min="0.5" max="3.0" step="0.05" value="1.1"> <span id="val-3-x">1.1</span></div>
+        <div class="debug-row"><span>ALTURA Y:</span> <input type="range" id="sl-3-y" min="-1.0" max="1.5" step="0.05" value="0.2"> <span id="val-3-y">0.2</span></div>
+        <div class="debug-row"><span>LARGO Z:</span> <input type="range" id="sl-3-z" min="0.0" max="8.0" step="0.1" value="1.6"> <span id="val-3-z">1.6</span></div>
+        <div class="debug-row"><span>RADIO:</span> <input type="range" id="sl-3-r" min="0.1" max="1.5" step="0.01" value="0.5"> <span id="val-3-r">0.50</span></div>
+
+        <div class="section-title">GLOBALES</div>
         <div class="debug-row"><span>CHASIS Y:</span> <input type="range" id="sl-vy" min="-2.0" max="2.0" step="0.05" value="-0.8"> <span id="val-vy">-0.8</span></div>
         <div class="debug-row"><span>ROT RUEDA:</span> <input type="range" id="sl-rot" min="0" max="6.28" step="1.57" value="0"> <span id="val-rot">0</span></div>
     </div>
@@ -108,18 +136,17 @@
         import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        // CONFIGURACIÓN INICIAL
+        // ==========================================
+        //  CONFIGURACIÓN
+        // ==========================================
         const ARCHIVO_CHASIS = 'chasis.fbx'; 
         const ARCHIVO_RUEDA  = 'rueda.fbx';
         const SCALE_FACTOR = 2.0; 
         const CHASSIS_ROT_Y = Math.PI; 
 
-        // Variables de Calibración
-        const cal = { 
-            fz: 1.6, fx: 1.1, fy: 0.2, fr: 0.38, // Front
-            rz: 1.6, rx: 1.1, ry: 0.2, rr: 0.50, // Rear
-            visualY: -0.8, rotX: 0 
-        };
+        // Variables Globales de Ajuste
+        let visualOffsetY = -0.8;
+        let wheelRotX = 0;
 
         const inputs = { key: {gas:0,brake:0,steer:0}, touch:{gas:0,brake:0,steer:0}, pad:{gas:0,brake:0,steer:0} };
         const state = { mode:'slide', cam:'chase', gyro:false, gyroVal:0, gyroOffset:0, lookBack:false };
@@ -135,58 +162,51 @@
             brakeBtn: document.getElementById('brake-pedal')
         };
 
-        // --- SISTEMA DE ACTUALIZACIÓN DE EJES ---
-        function updateCalibration() {
-            // Leer Front
-            cal.fz = parseFloat(document.getElementById('sl-fz').value);
-            cal.fx = parseFloat(document.getElementById('sl-fx').value);
-            cal.fy = parseFloat(document.getElementById('sl-fy').value);
-            cal.fr = parseFloat(document.getElementById('sl-fr').value);
-            
-            // Leer Rear
-            cal.rz = parseFloat(document.getElementById('sl-rz').value);
-            cal.rx = parseFloat(document.getElementById('sl-rx').value);
-            cal.ry = parseFloat(document.getElementById('sl-ry').value);
-            cal.rr = parseFloat(document.getElementById('sl-rr').value);
+        // --- CALIBRACIÓN INDIVIDUAL POR RUEDA ---
+        // 0: FL, 1: FR, 2: RL, 3: RR
+        function updateIndividualWheels() {
+            if(!vehicle) return;
 
-            // Leer Visuals
-            cal.visualY = parseFloat(document.getElementById('sl-vy').value);
-            cal.rotX = parseFloat(document.getElementById('sl-rot').value);
+            // Leer Globales
+            visualOffsetY = parseFloat(document.getElementById('sl-vy').value);
+            wheelRotX = parseFloat(document.getElementById('sl-rot').value);
+            document.getElementById('val-vy').innerText = visualOffsetY;
+            document.getElementById('val-rot').innerText = wheelRotX.toFixed(2);
 
-            // Actualizar Textos
-            document.getElementById('val-fz').innerText = cal.fz; document.getElementById('val-fx').innerText = cal.fx;
-            document.getElementById('val-fy').innerText = cal.fy; document.getElementById('val-fr').innerText = cal.fr;
-            document.getElementById('val-rz').innerText = cal.rz; document.getElementById('val-rx').innerText = cal.rx;
-            document.getElementById('val-ry').innerText = cal.ry; document.getElementById('val-rr').innerText = cal.rr;
-            document.getElementById('val-vy').innerText = cal.visualY; document.getElementById('val-rot').innerText = cal.rotX.toFixed(2);
-
-            // APLICAR A FÍSICAS
-            if(vehicle) {
-                const s = SCALE_FACTOR;
-                // Front Left (0) & Right (1)
-                vehicle.wheelInfos[0].chassisConnectionPointLocal.set(cal.fx * s, cal.fy * s, cal.fz * s);
-                vehicle.wheelInfos[1].chassisConnectionPointLocal.set(-cal.fx * s, cal.fy * s, cal.fz * s);
-                vehicle.wheelInfos[0].radius = cal.fr * s;
-                vehicle.wheelInfos[1].radius = cal.fr * s;
-
-                // Rear Left (2) & Right (3)
-                vehicle.wheelInfos[2].chassisConnectionPointLocal.set(cal.rx * s, cal.ry * s, -cal.rz * s); // Nota el -Z
-                vehicle.wheelInfos[3].chassisConnectionPointLocal.set(-cal.rx * s, cal.ry * s, -cal.rz * s); // Nota el -Z
-                vehicle.wheelInfos[2].radius = cal.rr * s;
-                vehicle.wheelInfos[3].radius = cal.rr * s;
-            }
-
-            // APLICAR A VISUALES (Escala dinámica basada en radio hitbox)
             for(let i=0; i<4; i++) {
+                // Leer valores de los sliders para la rueda [i]
+                const x = parseFloat(document.getElementById(`sl-${i}-x`).value);
+                const y = parseFloat(document.getElementById(`sl-${i}-y`).value);
+                const z = parseFloat(document.getElementById(`sl-${i}-z`).value);
+                const r = parseFloat(document.getElementById(`sl-${i}-r`).value);
+
+                // Actualizar Textos
+                document.getElementById(`val-${i}-x`).innerText = x;
+                document.getElementById(`val-${i}-y`).innerText = y;
+                document.getElementById(`val-${i}-z`).innerText = z;
+                document.getElementById(`val-${i}-r`).innerText = r;
+
+                // Aplicar a Físicas (Cannon)
+                // Importante: Aplicamos los signos correctos automáticamente
+                // Izquierdas (0, 2) son +X, Derechas (1, 3) son -X
+                // Delanteras (0, 1) son +Z, Traseras (2, 3) son -Z
+                const signX = (i === 0 || i === 2) ? 1 : -1;
+                const signZ = (i === 0 || i === 1) ? 1 : -1;
+
+                vehicle.wheelInfos[i].chassisConnectionPointLocal.set(
+                    x * SCALE_FACTOR * signX,
+                    y * SCALE_FACTOR,
+                    z * SCALE_FACTOR * signZ
+                );
+                
+                vehicle.wheelInfos[i].radius = r * SCALE_FACTOR;
+
+                // Aplicar a Visuales (ThreeJS)
                 if(wheelVisuals[i]) {
-                    const isRear = i >= 2;
-                    // Radio objetivo (física) / 0.38 (radio base modelo)
-                    const baseRad = 0.38; 
-                    const targetRad = isRear ? cal.rr : cal.fr;
-                    const visualScale = (targetRad / baseRad) * SCALE_FACTOR;
-                    
+                    const baseRad = 0.38; // Radio base del modelo 3d
+                    const visualScale = (r / baseRad) * SCALE_FACTOR;
                     wheelVisuals[i].scale.set(visualScale, visualScale, visualScale);
-                    wheelVisuals[i].rotation.x = cal.rotX;
+                    wheelVisuals[i].rotation.x = wheelRotX;
                 }
             }
         }
@@ -269,10 +289,10 @@
         const world = new CANNON.World(); world.gravity.set(0, -9.82, 0); world.broadphase = new CANNON.SAPBroadphase(world);
         const groundMat = new CANNON.Material(); const wheelMat = new CANNON.Material();
         world.addContactMaterial(new CANNON.ContactMaterial(wheelMat, groundMat, { friction: 3, restitution: 0 }));
+        
         const gb = new CANNON.Body({ mass: 0, material: groundMat }); gb.addShape(new CANNON.Plane()); gb.quaternion.setFromEuler(-Math.PI/2, 0, 0); world.addBody(gb);
         scene.add(new THREE.GridHelper(500, 100, 0x444444, 0x222222));
 
-        // --- LOADERS ---
         const fbxLoader = new FBXLoader();
         const chassisGroup = new THREE.Group();
         const wheelVisuals = [];
@@ -300,7 +320,8 @@
         chassisBody.position.set(0, 3, 0); chassisBody.angularDamping = 0.5;
 
         const vehicle = new CANNON.RaycastVehicle({ chassisBody: chassisBody, indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2 });
-        const wOpts = { radius: 0.38 * SCALE_FACTOR, directionLocal: new CANNON.Vec3(0,-1,0), suspensionStiffness: 45, suspensionRestLength: 0.45 * SCALE_FACTOR, frictionSlip: 4, dampingRelaxation: 5.5, dampingCompression: 4.5, maxSuspensionForce: 100000, axleLocal: new CANNON.Vec3(-1,0,0), chassisConnectionPointLocal: new CANNON.Vec3(0,0,0), maxSuspensionTravel: 0.2 * SCALE_FACTOR, useCustomSlidingRotationalSpeed: true, customSlidingRotationalSpeed: -30 };
+        // Valores iniciales (se sobreescriben por los sliders al primer frame)
+        const wOpts = { radius: 0.38, directionLocal: new CANNON.Vec3(0,-1,0), suspensionStiffness: 45, suspensionRestLength: 0.45, frictionSlip: 4, dampingRelaxation: 5.5, dampingCompression: 4.5, maxSuspensionForce: 100000, axleLocal: new CANNON.Vec3(-1,0,0), chassisConnectionPointLocal: new CANNON.Vec3(0,0,0), maxSuspensionTravel: 0.2, useCustomSlidingRotationalSpeed: true, customSlidingRotationalSpeed: -30 };
 
         for(let i=0; i<4; i++) vehicle.addWheel({...wOpts});
         vehicle.addToWorld(world);
@@ -310,7 +331,7 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            updateCalibration(); // EJECUTAR CALIBRADOR
+            updateIndividualWheels(); 
 
             const gas = Math.max(inputs.key.gas, inputs.touch.gas);
             const brake = Math.max(inputs.key.brake, inputs.touch.brake);
@@ -328,7 +349,7 @@
             world.fixedStep();
 
             chassisGroup.position.copy(chassisBody.position); 
-            const localY = new THREE.Vector3(0, cal.visualY * SCALE_FACTOR, 0);
+            const localY = new THREE.Vector3(0, visualOffsetY * SCALE_FACTOR, 0);
             localY.applyQuaternion(chassisBody.quaternion);
             chassisGroup.position.add(localY);
             chassisGroup.quaternion.copy(chassisBody.quaternion);
@@ -338,7 +359,7 @@
                 if(wheelVisuals[i]) {
                     wheelVisuals[i].position.copy(vehicle.wheelInfos[i].worldTransform.position);
                     wheelVisuals[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion);
-                    wheelVisuals[i].rotateX(cal.rotX);
+                    wheelVisuals[i].rotateX(wheelRotX);
                 }
             }
 
@@ -347,11 +368,11 @@
                 orbit.update();
             } else if(state.cam === 'chase') {
                 const offset = new THREE.Vector3(0, 3*SCALE_FACTOR, -7*SCALE_FACTOR).applyMatrix4(chassisGroup.matrixWorld);
-                camera.position.lerp(target, 0.1);
+                camera.position.lerp(offset, 0.1);
                 camera.lookAt(chassisGroup.position);
             } else {
                 camera.position.copy(new THREE.Vector3(0, 0.8*SCALE_FACTOR, 0.3*SCALE_FACTOR).applyMatrix4(chassisGroup.matrixWorld));
-                dummy.quaternion.copy(chassisGroup.quaternion);
+                dummy.quaternion.copy(chassisGroup.quaternion); dummy.rotateY(Math.PI);
                 camera.quaternion.slerp(dummy.quaternion, 0.2);
             }
 
