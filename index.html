@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Racing Formula v10.4 (Hybrid Input)</title>
+    <title>Racing Formula v10.3 (Universal Input)</title>
 
     <script type="importmap">
         {
@@ -16,7 +16,7 @@
     </script>
 
     <style>
-        /* Mantenemos exactamente tus estilos originales */
+        /* TU ESTILO ORIGINAL INTACTO */
         body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Segoe UI', sans-serif; touch-action: none; user-select: none; color: #ddd; }
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
         .hud-panel { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; border-left: 3px solid #c00; }
@@ -36,7 +36,6 @@
         #telemetry-app { position: absolute; bottom: 160px; right: 20px; width: 100px; height: 80px; background: rgba(0, 0, 0, 0.6); border: 1px solid #444; padding: 5px; pointer-events: none; display: flex; flex-direction: column; gap: 5px; }
         .tel-fill { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; transition: height 0.05s; }
         #tel-gas-fill { background: #00ff00; } #tel-brake-fill { background: #ff0000; }
-        /* Modal y configuración */
         #modal { position: fixed; top:0; left:0; width:100%; height:100%; background: #111; z-index: 200; display: flex; flex-direction: column; overflow: hidden; }
         .hidden { display: none !important; }
         #play-btn { padding: 10px 30px; background: #c00; color: white; border: none; font-weight: bold; cursor: pointer; }
@@ -65,7 +64,7 @@
         </div>
 
         <div id="touch-controls">
-            <div id="steering-zone"><div id="steer-indicator"></div><span>⬅️</span><span>➡️</span></div>
+            <div id="steering-zone"><div id="steer-indicator"></div><span style="opacity:0.3">⬅️</span><span style="opacity:0.3">➡️</span></div>
             <div id="vis-brake" class="pedal"></div>
             <div id="vis-gas" class="pedal"></div>
         </div>
@@ -73,73 +72,94 @@
 
     <div id="modal" class="hidden">
         <div style="padding: 20px; background: #222; border-bottom: 1px solid #c00; display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-weight:bold; color:white;">CONFIGURACIÓN v10.4</div>
+            <div style="font-weight:bold; color:white;">CONFIGURACIÓN v10.3</div>
             <button id="play-btn">GUARDAR Y JUGAR</button>
         </div>
-        <div style="padding: 40px; text-align: center; color: #888;">
-            Compatible con: <b>Teclado (WASD)</b>, <b>Mando (Gamepad)</b> y <b>Touch</b>.
-        </div>
+        <div style="padding: 20px; color:#888;">Controles habilitados: Teclado (WASD), Touch y Gamepad.</div>
     </div>
 
     <script type="module">
         import * as THREE from 'three';
         import * as CANNON from 'cannon-es';
 
-        // --- CONFIGURACIÓN Y ESTADO ---
-        const config = { gamma: 1.0, mobileMode: 'slide' };
-        const inputs = { gas: 0, brake: 0, steer: 0, look: 0 };
-        const keys = { w:0, s:0, a:0, d:0 };
-        let cameraMode = 'chase';
+        // --- TU LÓGICA DE CONFIGURACIÓN Y ESTADO ORIGINAL ---
+        const config = JSON.parse(localStorage.getItem('f1_v10_conf')) || {
+            steer: { id: 'axis-0', invert: false },
+            gas: { id: 'axis-2', invert: true },
+            brake: { id: 'axis-3', invert: true },
+            cam: { id: 'btn-3' }, look: { id: 'btn-1' }, reset: { id: 'btn-8' },
+            gamma: 1.0, mobileMode: 'slide'
+        };
 
-        // --- SISTEMA DE ENTRADA HÍBRIDO ---
-        
-        // 1. Teclado
+        const inputs = { gas: 0, brake: 0, steer: 0, look: 0 };
+        const keys = { w:0, s:0, a:0, d:0 }; // Nueva lógica para teclado
+        const state = { cameraMode: 'chase' };
+
+        // --- LISTENERS DE TECLADO ---
         window.addEventListener('keydown', (e) => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = 1; });
         window.addEventListener('keyup', (e) => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = 0; });
 
-        // 2. Touch (Slider y Pedales)
+        // --- LÓGICA TOUCH ORIGINAL ---
+        const touchInputs = { gas: 0, brake: 0, steer: 0, look: 0 };
         const steerZone = document.getElementById('steering-zone');
         const steerInd = document.getElementById('steer-indicator');
+        
         steerZone.addEventListener('touchmove', (e) => {
             e.preventDefault();
             const rect = steerZone.getBoundingClientRect();
-            const val = (e.touches[0].clientX - (rect.left + rect.width/2)) / (rect.width/2);
-            inputs.steer = Math.max(-1, Math.min(1, val));
+            const val = (e.touches[0].clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
+            touchInputs.steer = -Math.max(-1, Math.min(1, val));
+            steerInd.style.transform = `translateX(${-touchInputs.steer * (rect.width/2)}px)`;
         });
-        steerZone.addEventListener('touchend', () => { inputs.steer = 0; });
+        steerZone.addEventListener('touchend', () => { touchInputs.steer = 0; steerInd.style.transform = 'translateX(-50%)'; });
 
-        const bindPedal = (id, key) => {
-            const el = document.getElementById(id);
-            el.addEventListener('touchstart', (e) => { e.preventDefault(); inputs[key] = 1; el.classList.add('pressed'); });
-            el.addEventListener('touchend', (e) => { e.preventDefault(); inputs[key] = 0; el.classList.remove('pressed'); });
+        const bindPedal = (id, k) => {
+            const el = document.getElementById('vis-' + id);
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); touchInputs[k] = 1; el.classList.add('pressed'); });
+            el.addEventListener('touchend', (e) => { e.preventDefault(); touchInputs[k] = 0; el.classList.remove('pressed'); });
         };
-        bindPedal('vis-gas', 'gas'); bindPedal('brake', 'brake');
+        bindPedal('gas', 'gas'); bindPedal('brake', 'brake');
 
-        // --- MOTOR 3D Y FÍSICA ---
+        // --- TU MUNDO 3D Y FÍSICA ORIGINAL (SIN CAMBIOS) ---
         const scene = new THREE.Scene(); scene.background = new THREE.Color(0x1a1a1a);
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.4, 500);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.4, 500);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
         const world = new CANNON.World(); world.gravity.set(0, -9.82, 0);
-
-        // Suelo y Coche
+        
+        // Suelo
         const groundBody = new CANNON.Body({ mass: 0 }); groundBody.addShape(new CANNON.Plane());
         groundBody.quaternion.setFromEuler(-Math.PI/2, 0, 0); world.addBody(groundBody);
         scene.add(new THREE.GridHelper(500, 100, 0x444444, 0x222222));
 
+        // Chassis
         const chassisBody = new CANNON.Body({ mass: 200 });
-        chassisBody.addShape(new CANNON.Box(new CANNON.Vec3(0.75, 0.2, 2.2)));
-        chassisBody.position.set(0, 2, 0); world.addBody(chassisBody);
+        chassisBody.addShape(new CANNON.Box(new CANNON.Vec3(0.75, 0.15, 2.2)), new CANNON.Vec3(0, 0.2, 0));
+        chassisBody.position.set(0, 2, 0);
+        world.addBody(chassisBody);
 
+        // --- TU MODELO DETALLADO ORIGINAL ---
         const carMesh = new THREE.Group();
-        const bodyPart = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 4), new THREE.MeshStandardMaterial({color: 0xc00}));
-        carMesh.add(bodyPart); scene.add(carMesh);
+        const redMat = new THREE.MeshStandardMaterial({ color: 0xff1100 });
+        const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
 
-        // Raycast Vehicle (Tu suspensión original)
-        const vehicle = new CANNON.RaycastVehicle({ chassisBody });
+        const rearBody = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 1.5), redMat);
+        rearBody.position.set(0, 0.2, -1.2); carMesh.add(rearBody);
+        const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 1.5), redMat);
+        sideL.position.set(0.55, 0.2, 0.3); carMesh.add(sideL);
+        const sideR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 1.5), redMat);
+        sideR.position.set(-0.55, 0.2, 0.3); carMesh.add(sideR);
+        const nose = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.25, 1.8), redMat);
+        nose.position.set(0, 0.2, 1.8); carMesh.add(nose);
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.1, 0.6), blackMat);
+        wing.position.set(0, 0.7, -1.9); carMesh.add(wing);
+        scene.add(carMesh);
+
+        // Vehículo y Ruedas (Tu configuración v10.3)
+        const vehicle = new CANNON.RaycastVehicle({ chassisBody: chassisBody });
         const wOpts = { radius: 0.38, directionLocal: new CANNON.Vec3(0,-1,0), suspensionStiffness: 80, suspensionRestLength: 0.35, frictionSlip: 3, axleLocal: new CANNON.Vec3(-1,0,0), chassisConnectionPointLocal: new CANNON.Vec3(0,0,0) };
         
         const wPos = [[1.2, 0.1, 1.6], [-1.2, 0.1, 1.6], [1.2, 0.1, -1.6], [-1.2, 0.1, -1.6]];
@@ -147,68 +167,77 @@
         vehicle.addToWorld(world);
 
         const wheelMeshes = wPos.map(() => {
-            const m = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.5, 24), new THREE.MeshStandardMaterial({color: 0x222222}));
+            const m = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.5, 32), new THREE.MeshStandardMaterial({ color: 0x222222 }));
             m.rotateZ(Math.PI/2); scene.add(m); return m;
         });
 
         scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-        const sun = new THREE.DirectionalLight(0xffffff, 1); sun.position.set(10, 20, 10); scene.add(sun);
+        const sun = new THREE.DirectionalLight(0xffffff, 1); sun.position.set(10,20,10); scene.add(sun);
 
-        // --- LOOP PRINCIPAL ---
+        // --- LOOP DE ANIMACIÓN CON LÓGICA DE INPUT MEJORADA ---
         function animate() {
             requestAnimationFrame(animate);
-
-            // Mezclar entradas: Teclado + Gamepad + Touch
             const gp = navigator.getGamepads ? navigator.getGamepads()[0] : null;
-            
-            let finalGas = inputs.gas || keys.w || (gp ? (gp.buttons[7]?.value || 0) : 0);
-            let finalBrake = inputs.brake || keys.s || (gp ? (gp.buttons[6]?.value || 0) : 0);
-            
-            // Dirección suave para teclado
-            let targetSteer = inputs.steer;
-            if (keys.a) targetSteer = 0.8;
-            else if (keys.d) targetSteer = -0.8;
-            else if (gp) targetSteer = -gp.axes[0];
 
-            // Aplicar física
-            vehicle.applyEngineForce(-finalGas * 3500, 2);
-            vehicle.applyEngineForce(-finalGas * 3500, 3);
-            vehicle.setBrake(finalBrake * 150, 0);
-            vehicle.setBrake(finalBrake * 150, 1);
-            vehicle.setSteeringValue(targetSteer * 0.6, 0);
-            vehicle.setSteeringValue(targetSteer * 0.6, 1);
+            // 1. COMBINAR INPUTS (Teclado + Touch + Gamepad)
+            // Aceleración
+            inputs.gas = keys.w || touchInputs.gas || (gp ? (gp.buttons[7]?.value || 0) : 0);
+            // Freno
+            inputs.brake = keys.s || touchInputs.brake || (gp ? (gp.buttons[6]?.value || 0) : 0);
+            // Dirección (Prioriza teclado/touch, luego gamepad)
+            let steerVal = 0;
+            if (keys.a) steerVal = 0.75;
+            else if (keys.d) steerVal = -0.75;
+            else if (touchInputs.steer !== 0) steerVal = touchInputs.steer;
+            else if (gp) steerVal = -gp.axes[0];
+            
+            inputs.steer = steerVal;
+
+            // 2. APLICAR A LA FÍSICA (Tus valores originales)
+            const force = 3000;
+            vehicle.applyEngineForce(-inputs.gas * force, 2);
+            vehicle.applyEngineForce(-inputs.gas * force, 3);
+            vehicle.setBrake(inputs.brake * 150, 0);
+            vehicle.setBrake(inputs.brake * 150, 1);
+            vehicle.setSteeringValue(inputs.steer * 0.75, 0);
+            vehicle.setSteeringValue(inputs.steer * 0.75, 1);
+
+            // Downforce original
+            if(chassisBody.velocity.length() > 5) {
+                const df = -chassisBody.velocity.length() * 50;
+                chassisBody.applyLocalForce(new CANNON.Vec3(0, df, 0), new CANNON.Vec3(0, 0, 0));
+            }
 
             world.fixedStep();
 
-            // Actualizar visuales
+            // Sincronizar Mallas
             carMesh.position.copy(chassisBody.position);
             carMesh.quaternion.copy(chassisBody.quaternion);
-            for(let i=0; i<4; i++) {
+            for(let i=0; i<4; i++){
                 vehicle.updateWheelTransform(i);
                 wheelMeshes[i].position.copy(vehicle.wheelInfos[i].worldTransform.position);
                 wheelMeshes[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion);
             }
 
             // Cámara Chase
-            const camPos = new THREE.Vector3(0, 4, -8).applyMatrix4(carMesh.matrixWorld);
-            camera.position.lerp(camPos, 0.1);
+            const camOffset = new THREE.Vector3(0, 4, -8).applyMatrix4(carMesh.matrixWorld);
+            camera.position.lerp(camOffset, 0.1);
             camera.lookAt(carMesh.position);
 
-            // HUD y Telemetría
-            document.getElementById('speed-val').innerText = `${Math.floor(chassisBody.velocity.length()*3.6)} KMH`;
-            document.getElementById('hud-gas').style.width = `${finalGas*100}%`;
-            document.getElementById('tel-gas-fill').style.height = `${finalGas*100}%`;
-            document.getElementById('hud-brake').style.width = `${finalBrake*100}%`;
-            document.getElementById('tel-brake-fill').style.height = `${finalBrake*100}%`;
-            document.getElementById('hud-steer-marker').style.left = `${(targetSteer*50)+50}%`;
-            steerInd.style.transform = `translateX(${targetSteer * 100}px)`;
+            // ACTUALIZAR TU HUD Y TELEMETRÍA ORIGINAL
+            document.getElementById('speed-val').innerText = Math.floor(chassisBody.velocity.length()*3.6) + " KMH";
+            document.getElementById('hud-gas').style.width = (inputs.gas*100)+'%';
+            document.getElementById('hud-brake').style.width = (inputs.brake*100)+'%';
+            document.getElementById('hud-steer-marker').style.left = ((inputs.steer*50)+50)+'%';
+            document.getElementById('tel-gas-fill').style.height = (inputs.gas*100)+'%';
+            document.getElementById('tel-brake-fill').style.height = (inputs.brake*100)+'%';
 
             renderer.render(scene, camera);
         }
 
         animate();
 
-        // Eventos de botones
+        // Botones de la interfaz
         document.getElementById('settings-btn').onclick = () => document.getElementById('modal').classList.toggle('hidden');
         document.getElementById('play-btn').onclick = () => document.getElementById('modal').classList.add('hidden');
         document.getElementById('reset-btn').onclick = () => {
@@ -216,6 +245,11 @@
             chassisBody.velocity.set(0,0,0);
             chassisBody.quaternion.set(0,0,0,1);
         };
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
