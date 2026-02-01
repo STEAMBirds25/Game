@@ -2,9 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1: Live Calibration Tool</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1: Rescue Version</title>
     <script type="importmap">
         {
             "imports": {
@@ -14,52 +13,28 @@
             }
         }
     </script>
-
     <style>
-        body { margin: 0; overflow: hidden; background: #222; font-family: sans-serif; user-select: none; }
-        
-        /* DEBUG PANEL */
-        #debug-panel {
-            position: absolute; top: 10px; right: 10px; width: 220px;
-            background: rgba(0,0,0,0.8); color: #0f0; padding: 10px;
-            border: 1px solid #0f0; border-radius: 8px; font-size: 12px;
-            z-index: 100; pointer-events: auto; display: flex; flex-direction: column; gap: 5px;
-        }
-        .debug-row { display: flex; justify-content: space-between; align-items: center; }
-        input[type=range] { width: 100px; }
-        
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
-        .controls-area { position: absolute; bottom: 0; width: 100%; height: 200px; display: flex; justify-content: space-between; padding: 20px; box-sizing: border-box; }
-        .pedal { width: 80px; height: 140px; background: #333; border: 2px solid #555; pointer-events: auto; margin-top: auto; }
-        #gas-pedal { border-bottom: 5px solid #0f0; }
-        #brake-pedal { border-bottom: 5px solid #f00; height: 100px; }
-        #steering-zone { width: 200px; height: 140px; background: rgba(255,255,255,0.1); border-radius: 20px; pointer-events: auto; }
-        #speed-box { position: absolute; top: 20px; left: 20px; color: cyan; font-size: 30px; font-weight: bold; }
+        body { margin: 0; overflow: hidden; background: #111; color: white; font-family: sans-serif; }
+        #debug-info { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid red; pointer-events: none; }
+        #controls-ui { position: absolute; bottom: 20px; width: 100%; display: flex; justify-content: space-around; pointer-events: none; }
+        .btn { width: 80px; height: 80px; background: rgba(255,255,255,0.1); border: 2px solid white; border-radius: 50%; display: flex; justify-content: center; align-items: center; pointer-events: auto; }
+        .btn:active { background: white; color: black; }
     </style>
 </head>
 <body>
 
-    <!-- PANEL DE CALIBRACIÓN EN VIVO -->
-    <div id="debug-panel">
-        <h3 style="margin:0; text-align:center; border-bottom:1px solid #0f0">CALIBRADOR</h3>
-        <div class="debug-row"><span>ANCHO (X):</span> <input type="range" id="sl-x" min="0.5" max="3" step="0.05" value="1.1"> <span id="val-x">1.1</span></div>
-        <div class="debug-row"><span>ALTURA (Y):</span> <input type="range" id="sl-y" min="-2" max="2" step="0.05" value="0.3"> <span id="val-y">0.3</span></div>
-        <div class="debug-row"><span>LARGO (Z):</span> <input type="range" id="sl-z" min="0.5" max="3" step="0.05" value="1.6"> <span id="val-z">1.6</span></div>
-        <div class="debug-row"><span>VISUAL Y:</span> <input type="range" id="sl-vy" min="-2" max="2" step="0.05" value="-0.5"> <span id="val-vy">-0.5</span></div>
-        <div class="debug-row"><span>ROT RUEDA X:</span> <input type="range" id="sl-rx" min="0" max="6.28" step="1.57" value="0"> <span id="val-rx">0</span></div>
-        <div class="debug-row"><span>ROT RUEDA Z:</span> <input type="range" id="sl-rz" min="0" max="6.28" step="1.57" value="0"> <span id="val-rz">0</span></div>
-        <button onclick="copiarConfig()" style="margin-top:5px; cursor:pointer;">COPIAR DATOS A CONSOLA</button>
+    <div id="debug-info">
+        <h3>MODO DIAGNÓSTICO</h3>
+        <p>Si ves cajas verdes = Físicas OK</p>
+        <p>Si no ves el coche = Ajustar SCALE_FACTOR</p>
+        <p>Velocidad: <span id="speed">0</span> km/h</p>
     </div>
 
-    <div id="ui-layer">
-        <div id="speed-box">0 KM/H</div>
-        <div class="controls-area">
-            <div id="steering-zone"></div>
-            <div style="display:flex; gap:10px;">
-                <div id="brake-pedal" class="pedal"></div>
-                <div id="gas-pedal" class="pedal"></div>
-            </div>
-        </div>
+    <div id="controls-ui">
+        <div id="btn-left" class="btn">◀</div>
+        <div id="btn-brake" class="btn" style="border-color:red">FREN</div>
+        <div id="btn-gas" class="btn" style="border-color:lime">GAS</div>
+        <div id="btn-right" class="btn">▶</div>
     </div>
 
     <script type="module">
@@ -67,204 +42,215 @@
         import * as CANNON from 'cannon-es';
         import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-        // ==========================================
-        //  CONFIGURACIÓN INICIAL (Modificar Scale)
-        // ==========================================
-        const SCALE_FACTOR = 1.0; 
-        const ARCHIVO_CHASIS = 'chasis.fbx';
-        const ARCHIVO_RUEDA  = 'rueda.fbx';
-        // ==========================================
-
-        // Variables de calibración en tiempo real
-        const cal = { x: 1.1, y: 0.3, z: 1.6, visualY: -0.5, rotX: 0, rotZ: 0 };
+        // --- CONFIGURACIÓN DE EMERGENCIA ---
+        // Empieza con 1.0. Si no ves nada, prueba 0.01 o 100.
+        const SCALE_FACTOR = 0.01; 
+        
+        // Nombres de archivos
+        const FILE_CHASIS = 'chasis.fbx';
+        const FILE_RUEDA  = 'rueda.fbx';
+        // ------------------------------------
 
         // Inputs
-        const controls = { gas:0, brake:0, steer:0 };
-        const inputs = { key:{gas:0, brake:0, steer:0}, touch:{gas:0, brake:0, steer:0} };
+        const keys = { w:0, a:0, s:0, d:0 };
+        const touch = { w:0, a:0, s:0, d:0 };
 
-        // Scene
-        const scene = new THREE.Scene(); scene.background = new THREE.Color(0x333);
-        const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 1000);
+        // 1. ESCENA
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x202020);
+        scene.add(new THREE.GridHelper(500, 50)); // Suelo guía
+        scene.add(new THREE.AxesHelper(5)); // Ejes (Rojo=X, Verde=Y, Azul=Z)
+
+        // Luces (Muy fuertes para ver modelos negros)
+        const ambLight = new THREE.AmbientLight(0xffffff, 1.0);
+        scene.add(ambLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 2.0);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 10); // Cámara alta y lejos
+
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
-        
-        const sun = new THREE.DirectionalLight(0xffffff, 2); sun.position.set(10, 20, 10); scene.add(sun);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 
-        // Physics
-        const world = new CANNON.World(); world.gravity.set(0, -9.82, 0); world.broadphase = new CANNON.SAPBroadphase(world);
-        const groundMat = new CANNON.Material(); const wheelMat = new CANNON.Material();
-        world.addContactMaterial(new CANNON.ContactMaterial(wheelMat, groundMat, { friction: 3, restitution: 0 }));
-        
-        const gb = new CANNON.Body({ mass: 0, material: groundMat });
-        gb.addShape(new CANNON.Plane()); gb.quaternion.setFromEuler(-Math.PI/2, 0, 0); world.addBody(gb);
-        scene.add(new THREE.GridHelper(100, 100));
+        // 2. FÍSICAS (CANNON)
+        const world = new CANNON.World();
+        world.gravity.set(0, -9.82, 0);
+        world.broadphase = new CANNON.SAPBroadphase(world);
 
-        // --- CARGADORES ---
-        const fbxLoader = new FBXLoader();
-        const chassisGroup = new THREE.Group();
-        const wheelVisuals = []; // Array de { container: Group, mesh: Mesh }
+        const groundBody = new CANNON.Body({ mass: 0 });
+        groundBody.addShape(new CANNON.Plane());
+        groundBody.quaternion.setFromEuler(-Math.PI/2, 0, 0);
+        world.addBody(groundBody);
 
-        // 1. CHASIS
-        fbxLoader.load(`./models/${ARCHIVO_CHASIS}`, (obj) => {
-            obj.scale.set(SCALE_FACTOR, SCALE_FACTOR, SCALE_FACTOR);
-            obj.rotation.y = Math.PI; // Mirar al frente por defecto
-            chassisGroup.add(obj);
-        });
-        scene.add(chassisGroup);
+        // CHASIS FÍSICO
+        const chassisShape = new CANNON.Box(new CANNON.Vec3(0.8, 0.25, 2.0)); // Tamaño aprox de un F1
+        const chassisBody = new CANNON.Body({ mass: 150 });
+        chassisBody.addShape(chassisShape, new CANNON.Vec3(0, 0.5, 0));
+        chassisBody.position.set(0, 2, 0);
+        chassisBody.angularDamping = 0.5;
 
-        // 2. RUEDA (CON AUTO-CENTRADO GEOMÉTRICO)
-        fbxLoader.load(`./models/${ARCHIVO_RUEDA}`, (raw) => {
-            // A. Encontrar la geometría real dentro del FBX
-            let mesh = null;
-            raw.traverse(c => { if(c.isMesh && !mesh) mesh = c; }); // Tomar la primera malla encontrada
+        // VISUALIZADOR DE FÍSICAS (CAJA VERDE)
+        // Esto crea una caja de alambre verde donde está el cuerpo físico.
+        // Si ves esto, el juego funciona.
+        const debugChassisGeo = new THREE.BoxGeometry(1.6, 0.5, 4.0);
+        const debugChassisMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+        const debugChassisMesh = new THREE.Mesh(debugChassisGeo, debugChassisMat);
+        scene.add(debugChassisMesh);
 
-            if(mesh) {
-                // B. Calcular el centro geométrico de esa malla
-                mesh.geometry.computeBoundingBox();
-                const center = new THREE.Vector3();
-                mesh.geometry.boundingBox.getCenter(center);
-                
-                // C. Negar el centro para que (0,0,0) sea el centro real
-                mesh.geometry.translate(-center.x, -center.y, -center.z);
-                
-                // D. Clonar 4 veces
-                for(let i=0; i<4; i++) {
-                    // Contenedor que sigue a la física
-                    const wheelContainer = new THREE.Group(); 
-                    
-                    // Clonamos la malla corregida
-                    const wMesh = new THREE.Mesh(mesh.geometry, mesh.material);
-                    wMesh.scale.set(SCALE_FACTOR, SCALE_FACTOR, SCALE_FACTOR);
-                    wMesh.castShadow = true;
-
-                    // Guardamos referencia para rotarla con el slider
-                    wheelContainer.add(wMesh);
-                    scene.add(wheelContainer);
-                    
-                    wheelVisuals.push({ container: wheelContainer, mesh: wMesh });
-                }
-            } else {
-                console.error("No se encontró malla en la rueda FBX");
-            }
+        // VEHÍCULO
+        const vehicle = new CANNON.RaycastVehicle({
+            chassisBody: chassisBody,
+            indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2
         });
 
-        // --- FÍSICAS ---
-        const chassisBody = new CANNON.Body({ mass: 150, material: groundMat });
-        chassisBody.addShape(new CANNON.Box(new CANNON.Vec3(0.8*SCALE_FACTOR, 0.2*SCALE_FACTOR, 2.2*SCALE_FACTOR)), new CANNON.Vec3(0, 0.5, 0));
-        chassisBody.position.set(0, 3, 0); chassisBody.angularDamping = 0.5;
+        const wheelOptions = {
+            radius: 0.4,
+            directionLocal: new CANNON.Vec3(0, -1, 0),
+            suspensionStiffness: 30,
+            suspensionRestLength: 0.3,
+            frictionSlip: 1.4,
+            dampingRelaxation: 2.3,
+            dampingCompression: 4.4,
+            maxSuspensionForce: 100000,
+            rollInfluence: 0.01,
+            axleLocal: new CANNON.Vec3(-1, 0, 0),
+            chassisConnectionPointLocal: new CANNON.Vec3(0, 0, 0),
+            maxSuspensionTravel: 0.3,
+            customSlidingRotationalSpeed: -30,
+            useCustomSlidingRotationalSpeed: true
+        };
 
-        const vehicle = new CANNON.RaycastVehicle({ chassisBody: chassisBody, indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2 });
-        const wOpts = { radius: 0.4 * SCALE_FACTOR, directionLocal: new CANNON.Vec3(0,-1,0), suspensionStiffness: 45, suspensionRestLength: 0.5, frictionSlip: 4, dampingRelaxation: 2.3, dampingCompression: 4.4, maxSuspensionForce: 100000, axleLocal: new CANNON.Vec3(-1,0,0), chassisConnectionPointLocal: new CANNON.Vec3(0,0,0), maxSuspensionTravel: 0.3, useCustomSlidingRotationalSpeed: true, customSlidingRotationalSpeed: -30 };
+        // Añadir ruedas (Posiciones fijas para probar)
+        wheelOptions.chassisConnectionPointLocal.set(1.0, 0, 1.5); vehicle.addWheel(wheelOptions);
+        wheelOptions.chassisConnectionPointLocal.set(-1.0, 0, 1.5); vehicle.addWheel(wheelOptions);
+        wheelOptions.chassisConnectionPointLocal.set(1.0, 0, -1.5); vehicle.addWheel(wheelOptions);
+        wheelOptions.chassisConnectionPointLocal.set(-1.0, 0, -1.5); vehicle.addWheel(wheelOptions);
 
-        // Añadir 4 ruedas (posiciones placeholder, se actualizarán en el loop con los sliders)
-        for(let i=0; i<4; i++) {
-            vehicle.addWheel(wOpts);
-        }
         vehicle.addToWorld(world);
 
-        // --- INPUT HANDLING ---
+        // 3. CARGADOR DE MODELOS (CON FIX DE CENTRADO)
+        const loader = new FBXLoader();
+        const chassisVisuals = new THREE.Group();
+        scene.add(chassisVisuals);
+        
+        const wheelVisuals = []; // Array de meshes de ruedas
+
+        // CARGAR CHASIS
+        loader.load(`./models/${FILE_CHASIS}`, (obj) => {
+            console.log("Chasis cargado");
+            obj.scale.set(SCALE_FACTOR, SCALE_FACTOR, SCALE_FACTOR);
+            obj.rotation.y = Math.PI; // Girar 180 si mira atrás
+            // Corrección visual de altura
+            obj.position.y = -0.5; 
+            chassisVisuals.add(obj);
+        }, undefined, (e) => console.error("Error Chasis:", e));
+
+        // CARGAR RUEDA (SOLUCIÓN PANDEO)
+        loader.load(`./models/${FILE_RUEDA}`, (rawModel) => {
+            console.log("Rueda cargada");
+            
+            // 1. Encontrar la malla real
+            let mesh = null;
+            rawModel.traverse(c => { if(c.isMesh && !mesh) mesh = c; });
+
+            if(mesh) {
+                // 2. FORZAR CENTRADO GEOMÉTRICO
+                // Esto mueve los vértices para que el centro sea 0,0,0. Adiós pandeo.
+                mesh.geometry.center(); 
+                
+                // 3. Crear 4 clones
+                for(let i=0; i<4; i++) {
+                    const w = new THREE.Mesh(mesh.geometry, mesh.material);
+                    w.scale.set(SCALE_FACTOR, SCALE_FACTOR, SCALE_FACTOR);
+                    
+                    // Si las traseras deben ser más grandes:
+                    if(i >= 2) w.scale.multiplyScalar(1.3);
+
+                    w.castShadow = true;
+                    scene.add(w);
+                    wheelVisuals.push(w);
+                }
+            }
+        }, undefined, (e) => console.error("Error Rueda:", e));
+
+
+        // 4. CONTROLES
+        // Teclado
         window.onkeydown = (e) => {
             const k = e.key.toLowerCase();
-            if(k==='w') inputs.key.gas=1; if(k==='s') inputs.key.brake=1;
-            if(k==='a') inputs.key.steer=1; if(k==='d') inputs.key.steer=-1;
+            if(k==='w') keys.w=1; if(k==='s') keys.s=1; if(k==='a') keys.a=1; if(k==='d') keys.d=1;
+            if(k==='r') { chassisBody.position.set(0,3,0); chassisBody.quaternion.set(0,0,0,1); chassisBody.velocity.set(0,0,0); chassisBody.angularVelocity.set(0,0,0); }
         };
         window.onkeyup = (e) => {
             const k = e.key.toLowerCase();
-            if(k==='w') inputs.key.gas=0; if(k==='s') inputs.key.brake=0;
-            if(k==='a'||k==='d') inputs.key.steer=0;
+            if(k==='w') keys.w=0; if(k==='s') keys.s=0; if(k==='a') keys.a=0; if(k==='d') keys.d=0;
         };
 
-        // --- UPDATER DE SLIDERS ---
-        function updateCalibration() {
-            cal.x = parseFloat(document.getElementById('sl-x').value);
-            cal.y = parseFloat(document.getElementById('sl-y').value);
-            cal.z = parseFloat(document.getElementById('sl-z').value);
-            cal.visualY = parseFloat(document.getElementById('sl-vy').value);
-            cal.rotX = parseFloat(document.getElementById('sl-rx').value);
-            cal.rotZ = parseFloat(document.getElementById('sl-rz').value);
-
-            // Actualizar etiquetas
-            document.getElementById('val-x').innerText = cal.x;
-            document.getElementById('val-y').innerText = cal.y;
-            document.getElementById('val-z').innerText = cal.z;
-            document.getElementById('val-vy').innerText = cal.visualY;
-            document.getElementById('val-rx').innerText = (cal.rotX * 57.29).toFixed(0) + "°";
-            document.getElementById('val-rz').innerText = (cal.rotZ * 57.29).toFixed(0) + "°";
-
-            // Actualizar Físicas (Posiciones de ruedas)
-            // Delanteras
-            vehicle.wheelInfos[0].chassisConnectionPointLocal.set(cal.x, cal.y, cal.z);
-            vehicle.wheelInfos[1].chassisConnectionPointLocal.set(-cal.x, cal.y, cal.z);
-            // Traseras
-            vehicle.wheelInfos[2].chassisConnectionPointLocal.set(cal.x, cal.y, -cal.z);
-            vehicle.wheelInfos[3].chassisConnectionPointLocal.set(-cal.x, cal.y, -cal.z);
-
-            // Actualizar Visual Chasis
-            chassisGroup.position.y = cal.visualY;
-
-            // Actualizar Rotación Interna de Ruedas (Para arreglar lo pandeado)
-            wheelVisuals.forEach(w => {
-                if(w.mesh) w.mesh.rotation.set(cal.rotX, 0, cal.rotZ);
-            });
-        }
-
-        window.copiarConfig = function() {
-            console.log(`
-            // --- COPIA ESTO EN TU CÓDIGO ---
-            const SEPARACION_ANCHO = ${cal.x};
-            const ALTURA_SUSPENSION = ${cal.y};
-            const SEPARACION_LARGO = ${cal.z};
-            const VISUAL_OFFSET_Y = ${cal.visualY};
-            const WHEEL_ROT_X = ${cal.rotX};
-            const WHEEL_ROT_Z = ${cal.rotZ};
-            `);
-            alert("Configuración copiada en la consola (F12)");
+        // Botones UI
+        const bind = (id, k) => {
+            const el = document.getElementById(id);
+            el.onmousedown = el.ontouchstart = (e) => { e.preventDefault(); touch[k]=1; el.style.background='white'; el.style.color='black'; };
+            el.onmouseup = el.onmouseleave = el.ontouchend = (e) => { e.preventDefault(); touch[k]=0; el.style.background='rgba(255,255,255,0.1)'; el.style.color='white'; };
         };
+        bind('btn-gas', 'w'); bind('btn-brake', 's'); bind('btn-left', 'a'); bind('btn-right', 'd');
 
-        // --- ANIMATION ---
+
+        // 5. ANIMACIÓN
         function animate() {
             requestAnimationFrame(animate);
-            updateCalibration(); // Leer sliders cada frame
 
-            // Inputs
-            const gas = inputs.key.gas; // + touch logic here if needed
-            const brake = inputs.key.brake;
-            const steer = inputs.key.steer;
+            // Inputs combinados
+            const gas = Math.max(keys.w, touch.w);
+            const brake = Math.max(keys.s, touch.s);
+            const steer = (keys.a || touch.a) ? 1 : (keys.d || touch.d) ? -1 : 0; // Izq=Positivo en este setup básico
 
-            const force = 2000;
-            vehicle.applyEngineForce(-gas * force, 2); vehicle.applyEngineForce(-gas * force, 3);
+            // Aplicar fuerzas
+            vehicle.applyEngineForce(-gas * 2000, 2);
+            vehicle.applyEngineForce(-gas * 2000, 3);
+            
             vehicle.setBrake(brake * 100, 0); vehicle.setBrake(brake * 100, 1);
             vehicle.setBrake(brake * 100, 2); vehicle.setBrake(brake * 100, 3);
-            vehicle.setSteeringValue(steer * 0.6, 0); vehicle.setSteeringValue(steer * 0.6, 1);
+
+            vehicle.setSteeringValue(steer * 0.5, 0);
+            vehicle.setSteeringValue(steer * 0.5, 1);
 
             world.fixedStep();
 
-            // Sync
-            chassisGroup.position.copy(chassisBody.position);
-            chassisGroup.position.y += cal.visualY; // Offset visual manual
-            chassisGroup.quaternion.copy(chassisBody.quaternion);
+            // Sincronizar Chasis Visual
+            chassisVisuals.position.copy(chassisBody.position);
+            chassisVisuals.quaternion.copy(chassisBody.quaternion);
+            
+            // Sincronizar Debug Box (Caja Verde)
+            debugChassisMesh.position.copy(chassisBody.position);
+            debugChassisMesh.quaternion.copy(chassisBody.quaternion);
 
-            for(let i=0; i<4; i++){
+            // Sincronizar Ruedas
+            for(let i=0; i<4; i++) {
                 vehicle.updateWheelTransform(i);
                 if(wheelVisuals[i]) {
-                    // El contenedor sigue a la física
-                    wheelVisuals[i].container.position.copy(vehicle.wheelInfos[i].worldTransform.position);
-                    wheelVisuals[i].container.quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion);
+                    wheelVisuals[i].position.copy(vehicle.wheelInfos[i].worldTransform.position);
+                    wheelVisuals[i].quaternion.copy(vehicle.wheelInfos[i].worldTransform.quaternion);
                 }
             }
 
-            // Camera
-            const target = new THREE.Vector3(0, 3, -7).applyMatrix4(chassisGroup.matrixWorld);
-            camera.position.lerp(target, 0.1);
-            camera.lookAt(chassisGroup.position);
+            // Cámara Chase simple
+            const camOffset = new THREE.Vector3(0, 4, -8).applyMatrix4(debugChassisMesh.matrixWorld);
+            camera.position.lerp(camOffset, 0.1);
+            camera.lookAt(chassisBody.position);
 
-            document.getElementById('speed-val').innerText = Math.floor(chassisBody.velocity.length() * 3.6);
+            document.getElementById('speed').innerText = Math.floor(chassisBody.velocity.length() * 3.6);
             renderer.render(scene, camera);
         }
+
         animate();
-        window.onresize=()=>{renderer.setSize(window.innerWidth, window.innerHeight); camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();};
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
 
     </script>
 </body>
