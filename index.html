@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1: FINAL TUNED VERSION</title>
+    <title>Racing Formula Beta</title>
 
     <script type="importmap">
         {
@@ -325,6 +325,7 @@
             const localY = new THREE.Vector3(0, VISUAL_OFFSET_Y * SCALE_FACTOR, 0);
             localY.applyQuaternion(chassisBody.quaternion);
             chassisGroup.position.add(localY);
+            
             chassisGroup.quaternion.copy(chassisBody.quaternion);
 
             for(let i=0; i<4; i++){
