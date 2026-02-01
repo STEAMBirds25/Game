@@ -408,8 +408,12 @@
             vehicle.setBrake(inputs.brake * 100, 0); vehicle.setBrake(inputs.brake * 100, 1);
             vehicle.setBrake(inputs.brake * 200, 2); vehicle.setBrake(inputs.brake * 200, 3);
             vehicle.setSteeringValue(inputs.steer * 0.75, 0); vehicle.setSteeringValue(inputs.steer * 0.75, 1);
-            // DOWNFORCE MEDIO - Balance entre agarre y maniobrabilidad
-            if(chassisBody.velocity.length() > 5) chassisBody.applyLocalForce(new CANNON.Vec3(0, -chassisBody.velocity.length()*250, 0), new CANNON.Vec3(0, 0, 0));
+  
+            // DOWNFORCE REAJUSTADO (Más natural, evita que vuele sin ser exagerado)
+                if(chassisBody.velocity.length() > 5) {
+    const lowDownforce = -chassisBody.velocity.length() * 50; 
+    chassisBody.applyLocalForce(new CANNON.Vec3(0, lowDownforce, 0), new CANNON.Vec3(0, 0, 0));
+}
             
             world.fixedStep();
             carMesh.position.copy(chassisBody.position); carMesh.quaternion.copy(chassisBody.quaternion);
