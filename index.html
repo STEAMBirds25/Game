@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1: INDIVIDUAL WHEEL CALIBRATION</title>
+    <title>F1: MASTER CALIBRATION (HUGE SCALE)</title>
 
     <script type="importmap">
         {
@@ -23,14 +23,13 @@
         /* PANEL CON SCROLL */
         #debug-panel {
             position: absolute; top: 60px; right: 10px; width: 290px;
-            max-height: 85vh; overflow-y: auto; /* Scroll si es muy alto */
+            max-height: 85vh; overflow-y: auto; 
             background: rgba(0, 10, 30, 0.95); color: white; padding: 10px;
             border: 2px solid cyan; border-radius: 8px; font-size: 11px;
             z-index: 5000; pointer-events: auto; display: flex; flex-direction: column; gap: 2px;
             box-shadow: -5px 5px 15px rgba(0,0,0,0.5);
         }
         
-        /* Scrollbar styling */
         #debug-panel::-webkit-scrollbar { width: 8px; }
         #debug-panel::-webkit-scrollbar-track { background: #000; }
         #debug-panel::-webkit-scrollbar-thumb { background: #0aa; border-radius: 4px; }
@@ -67,37 +66,37 @@
 </head>
 <body>
 
-    <!-- PANEL DE CALIBRACIÓN INDIVIDUAL -->
+    <!-- PANEL DE CALIBRACIÓN INDIVIDUAL (RANGOS AMPLIADOS A 10.0) -->
     <div id="debug-panel">
         <h3>🔧 CALIBRADOR DE RUEDAS</h3>
         
         <!-- RUEDA 0: DELANTERA IZQUIERDA -->
         <div class="section-header">FL (DEL IZQ)</div>
-        <div class="debug-row"><span>ANCHO X:</span> <input type="range" id="sl-0-x" min="0.5" max="3.0" step="0.05" value="1.1"> <span id="val-0-x">1.1</span></div>
-        <div class="debug-row"><span>ALTURA Y:</span> <input type="range" id="sl-0-y" min="-1.0" max="1.5" step="0.05" value="0.2"> <span id="val-0-y">0.2</span></div>
-        <div class="debug-row"><span>LARGO Z:</span> <input type="range" id="sl-0-z" min="0.0" max="8.0" step="0.1" value="1.6"> <span id="val-0-z">1.6</span></div>
-        <div class="debug-row"><span>RADIO:</span> <input type="range" id="sl-0-r" min="0.1" max="1.5" step="0.01" value="0.38"> <span id="val-0-r">0.38</span></div>
+        <div class="debug-row"><span>ANCHO X:</span> <input type="range" id="sl-0-x" min="0.5" max="10.0" step="0.1" value="1.1"> <span id="val-0-x">1.1</span></div>
+        <div class="debug-row"><span>ALTURA Y:</span> <input type="range" id="sl-0-y" min="-2.0" max="2.0" step="0.05" value="0.2"> <span id="val-0-y">0.2</span></div>
+        <div class="debug-row"><span>LARGO Z:</span> <input type="range" id="sl-0-z" min="0.0" max="10.0" step="0.1" value="1.6"> <span id="val-0-z">1.6</span></div>
+        <div class="debug-row"><span>RADIO:</span> <input type="range" id="sl-0-r" min="0.1" max="2.0" step="0.01" value="0.38"> <span id="val-0-r">0.38</span></div>
 
         <!-- RUEDA 1: DELANTERA DERECHA -->
         <div class="section-header">FR (DEL DER)</div>
-        <div class="debug-row"><span>ANCHO X:</span> <input type="range" id="sl-1-x" min="0.5" max="3.0" step="0.05" value="1.1"> <span id="val-1-x">1.1</span></div>
-        <div class="debug-row"><span>ALTURA Y:</span> <input type="range" id="sl-1-y" min="-1.0" max="1.5" step="0.05" value="0.2"> <span id="val-1-y">0.2</span></div>
-        <div class="debug-row"><span>LARGO Z:</span> <input type="range" id="sl-1-z" min="0.0" max="8.0" step="0.1" value="1.6"> <span id="val-1-z">1.6</span></div>
-        <div class="debug-row"><span>RADIO:</span> <input type="range" id="sl-1-r" min="0.1" max="1.5" step="0.01" value="0.38"> <span id="val-1-r">0.38</span></div>
+        <div class="debug-row"><span>ANCHO X:</span> <input type="range" id="sl-1-x" min="0.5" max="10.0" step="0.1" value="1.1"> <span id="val-1-x">1.1</span></div>
+        <div class="debug-row"><span>ALTURA Y:</span> <input type="range" id="sl-1-y" min="-2.0" max="2.0" step="0.05" value="0.2"> <span id="val-1-y">0.2</span></div>
+        <div class="debug-row"><span>LARGO Z:</span> <input type="range" id="sl-1-z" min="0.0" max="10.0" step="0.1" value="1.6"> <span id="val-1-z">1.6</span></div>
+        <div class="debug-row"><span>RADIO:</span> <input type="range" id="sl-1-r" min="0.1" max="2.0" step="0.01" value="0.38"> <span id="val-1-r">0.38</span></div>
 
         <!-- RUEDA 2: TRASERA IZQUIERDA -->
         <div class="section-header">RL (TRAS IZQ)</div>
-        <div class="debug-row"><span>ANCHO X:</span> <input type="range" id="sl-2-x" min="0.5" max="3.0" step="0.05" value="1.1"> <span id="val-2-x">1.1</span></div>
-        <div class="debug-row"><span>ALTURA Y:</span> <input type="range" id="sl-2-y" min="-1.0" max="1.5" step="0.05" value="0.2"> <span id="val-2-y">0.2</span></div>
-        <div class="debug-row"><span>LARGO Z:</span> <input type="range" id="sl-2-z" min="0.0" max="8.0" step="0.1" value="1.6"> <span id="val-2-z">1.6</span></div>
-        <div class="debug-row"><span>RADIO:</span> <input type="range" id="sl-2-r" min="0.1" max="1.5" step="0.01" value="0.5"> <span id="val-2-r">0.50</span></div>
+        <div class="debug-row"><span>ANCHO X:</span> <input type="range" id="sl-2-x" min="0.5" max="10.0" step="0.1" value="1.1"> <span id="val-2-x">1.1</span></div>
+        <div class="debug-row"><span>ALTURA Y:</span> <input type="range" id="sl-2-y" min="-2.0" max="2.0" step="0.05" value="0.2"> <span id="val-2-y">0.2</span></div>
+        <div class="debug-row"><span>LARGO Z:</span> <input type="range" id="sl-2-z" min="0.0" max="10.0" step="0.1" value="1.6"> <span id="val-2-z">1.6</span></div>
+        <div class="debug-row"><span>RADIO:</span> <input type="range" id="sl-2-r" min="0.1" max="2.0" step="0.01" value="0.5"> <span id="val-2-r">0.50</span></div>
 
         <!-- RUEDA 3: TRASERA DERECHA -->
         <div class="section-header">RR (TRAS DER)</div>
-        <div class="debug-row"><span>ANCHO X:</span> <input type="range" id="sl-3-x" min="0.5" max="3.0" step="0.05" value="1.1"> <span id="val-3-x">1.1</span></div>
-        <div class="debug-row"><span>ALTURA Y:</span> <input type="range" id="sl-3-y" min="-1.0" max="1.5" step="0.05" value="0.2"> <span id="val-3-y">0.2</span></div>
-        <div class="debug-row"><span>LARGO Z:</span> <input type="range" id="sl-3-z" min="0.0" max="8.0" step="0.1" value="1.6"> <span id="val-3-z">1.6</span></div>
-        <div class="debug-row"><span>RADIO:</span> <input type="range" id="sl-3-r" min="0.1" max="1.5" step="0.01" value="0.5"> <span id="val-3-r">0.50</span></div>
+        <div class="debug-row"><span>ANCHO X:</span> <input type="range" id="sl-3-x" min="0.5" max="10.0" step="0.1" value="1.1"> <span id="val-3-x">1.1</span></div>
+        <div class="debug-row"><span>ALTURA Y:</span> <input type="range" id="sl-3-y" min="-2.0" max="2.0" step="0.05" value="0.2"> <span id="val-3-y">0.2</span></div>
+        <div class="debug-row"><span>LARGO Z:</span> <input type="range" id="sl-3-z" min="0.0" max="10.0" step="0.1" value="1.6"> <span id="val-3-z">1.6</span></div>
+        <div class="debug-row"><span>RADIO:</span> <input type="range" id="sl-3-r" min="0.1" max="2.0" step="0.01" value="0.5"> <span id="val-3-r">0.50</span></div>
 
         <div class="section-title">GLOBALES</div>
         <div class="debug-row"><span>CHASIS Y:</span> <input type="range" id="sl-vy" min="-2.0" max="2.0" step="0.05" value="-0.8"> <span id="val-vy">-0.8</span></div>
@@ -293,6 +292,7 @@
         const gb = new CANNON.Body({ mass: 0, material: groundMat }); gb.addShape(new CANNON.Plane()); gb.quaternion.setFromEuler(-Math.PI/2, 0, 0); world.addBody(gb);
         scene.add(new THREE.GridHelper(500, 100, 0x444444, 0x222222));
 
+        // --- LOADERS ---
         const fbxLoader = new FBXLoader();
         const chassisGroup = new THREE.Group();
         const wheelVisuals = [];
