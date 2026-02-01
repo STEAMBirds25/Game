@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Racing Formula v10.4</title>
+    <title>Racing Formula v10.3 (Stable Cam)</title>
 
     <script type="importmap">
         {
@@ -408,8 +408,8 @@
             vehicle.setBrake(inputs.brake * 100, 0); vehicle.setBrake(inputs.brake * 100, 1);
             vehicle.setBrake(inputs.brake * 200, 2); vehicle.setBrake(inputs.brake * 200, 3);
             vehicle.setSteeringValue(inputs.steer * 0.75, 0); vehicle.setSteeringValue(inputs.steer * 0.75, 1);
-            // DOWNFORCE MASIVO - Pega el auto al piso
-            if(chassisBody.velocity.length() > 5) chassisBody.applyLocalForce(new CANNON.Vec3(0, -chassisBody.velocity.length()*350, 0), new CANNON.Vec3(0, 0, 0));
+            // DOWNFORCE MEDIO - Balance entre agarre y maniobrabilidad
+            if(chassisBody.velocity.length() > 5) chassisBody.applyLocalForce(new CANNON.Vec3(0, -chassisBody.velocity.length()*250, 0), new CANNON.Vec3(0, 0, 0));
             
             world.fixedStep();
             carMesh.position.copy(chassisBody.position); carMesh.quaternion.copy(chassisBody.quaternion);
