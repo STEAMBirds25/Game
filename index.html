@@ -105,7 +105,6 @@
 </head>
 <body>
 
-    <!-- JUEGO UI -->
     <div id="ui-layer">
         <button id="settings-btn" class="top-btn">⚙️</button>
         <button id="camera-btn" class="top-btn">🎥</button>
@@ -127,7 +126,6 @@
             <div class="tel-steer-row"><div id="tel-steer-marker"></div></div>
         </div>
 
-        <!-- CONTROLES TÁCTILES -->
         <div id="touch-controls">
             <div id="steering-zone">
                 <div id="steer-indicator"></div>
@@ -140,7 +138,6 @@
         </div>
     </div>
 
-    <!-- MENU CONFIG -->
     <div id="modal">
         <div class="modal-header">
             <div class="modal-title">Configuración v10.3</div>
@@ -361,8 +358,29 @@
         scene.add(carMesh);
 
         const vehicle = new CANNON.RaycastVehicle({ chassisBody: chassisBody, indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2 });
-        const wOpts = { radius: 0.38, directionLocal: new CANNON.Vec3(0,-1,0), suspensionStiffness: 120, suspensionRestLength: 0.3, frictionSlip: 3, dampingRelaxation: 12.0, dampingCompression: 10.0, maxSuspensionForce: 150000, axleLocal: new CANNON.Vec3(-1,0,0), chassisConnectionPointLocal: new CANNON.Vec3(0,0,0), maxSuspensionTravel: 0.15, useCustomSlidingRotationalSpeed: true, customSlidingRotationalSpeed: -30 };
-        wOpts.chassisConnectionPointLocal.set(1.2, 0.1, 1.6); vehicle.addWheel(wOpts); wOpts.chassisConnectionPointLocal.set(-1.2, 0.1, 1.6); vehicle.addWheel(wOpts); wOpts.chassisConnectionPointLocal.set(1.2, 0.1, -1.6); vehicle.addWheel(wOpts); wOpts.chassisConnectionPointLocal.set(-1.2, 0.1, -1.6); vehicle.addWheel(wOpts);
+        
+        // SUSPENSIÓN UN PELÍN MÁS SUAVE Y REALISTA
+        const wOpts = { 
+            radius: 0.38, 
+            directionLocal: new CANNON.Vec3(0,-1,0), 
+            suspensionStiffness: 80,          // Suavizado (de 120 a 80)
+            suspensionRestLength: 0.35,       // Un poco más de altura (de 0.3 a 0.35)
+            frictionSlip: 3, 
+            dampingRelaxation: 8.0,           // Menos seco el rebote
+            dampingCompression: 6.0,          // Se comprime con más naturalidad
+            maxSuspensionForce: 150000, 
+            axleLocal: new CANNON.Vec3(-1,0,0), 
+            chassisConnectionPointLocal: new CANNON.Vec3(0,0,0), 
+            maxSuspensionTravel: 0.25,        // Mayor recorrido para baches
+            useCustomSlidingRotationalSpeed: true, 
+            customSlidingRotationalSpeed: -30 
+        };
+
+        wOpts.chassisConnectionPointLocal.set(1.2, 0.1, 1.6); vehicle.addWheel(wOpts); 
+        wOpts.chassisConnectionPointLocal.set(-1.2, 0.1, 1.6); vehicle.addWheel(wOpts); 
+        wOpts.chassisConnectionPointLocal.set(1.2, 0.1, -1.6); vehicle.addWheel(wOpts); 
+        wOpts.chassisConnectionPointLocal.set(-1.2, 0.1, -1.6); vehicle.addWheel(wOpts);
+        
         vehicle.addToWorld(world);
         const wheelMeshes = []; const wGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.55, 32); wGeo.rotateZ(Math.PI/2);
         for(let i=0; i<4; i++){ const m = new THREE.Mesh(wGeo, new THREE.MeshStandardMaterial({ color: 0x222222 })); m.castShadow = true; scene.add(m); wheelMeshes.push(m); }
@@ -410,10 +428,10 @@
             vehicle.setSteeringValue(inputs.steer * 0.75, 0); vehicle.setSteeringValue(inputs.steer * 0.75, 1);
   
             // DOWNFORCE REAJUSTADO (Más natural, evita que vuele sin ser exagerado)
-                if(chassisBody.velocity.length() > 5) {
-    const lowDownforce = -chassisBody.velocity.length() * 50; 
-    chassisBody.applyLocalForce(new CANNON.Vec3(0, lowDownforce, 0), new CANNON.Vec3(0, 0, 0));
-}
+            if(chassisBody.velocity.length() > 5) {
+                const lowDownforce = -chassisBody.velocity.length() * 50; 
+                chassisBody.applyLocalForce(new CANNON.Vec3(0, lowDownforce, 0), new CANNON.Vec3(0, 0, 0));
+            }
             
             world.fixedStep();
             carMesh.position.copy(chassisBody.position); carMesh.quaternion.copy(chassisBody.quaternion);
@@ -433,16 +451,14 @@
                     camera.lookAt(lookAt);
                 }
             } else {
-                // COCKPIT - configuración original
+                // COCKPIT
                 offset = new THREE.Vector3(0, 0.85, 0.5).applyMatrix4(carMesh.matrixWorld);
                 camera.position.copy(offset);
-                
                 if (inputs.look) {
                     lookAt = new THREE.Vector3(0, 0.85, -10).applyMatrix4(carMesh.matrixWorld);
                 } else {
                     lookAt = new THREE.Vector3(0, 0.8, 10).applyMatrix4(carMesh.matrixWorld);
                 }
-                
                 camera.lookAt(lookAt);
                 camera.updateMatrixWorld(true);
             }
