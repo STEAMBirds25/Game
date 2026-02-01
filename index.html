@@ -1,4 +1,32 @@
-// --- CONFIGURACIÓN DE SUSPENSIÓN MEJORADA (v10.4 Physics) ---
+// --- 1. LÓGICA DE POSICIÓN DEL PEDAL (Freno a la derecha en Slider) ---
+function setupMobileMode(mode) {
+    config.mobileMode = mode;
+    const steerZone = document.getElementById('steering-zone');
+    const brakePedal = document.getElementById('vis-brake');
+    const gasPedal = document.getElementById('vis-gas');
+
+    if (mode === 'slide') { 
+        steerZone.style.display = 'flex'; 
+        document.getElementById('opt-slide').className = 'option-btn active-opt'; 
+        document.getElementById('opt-gyro').className = 'option-btn';
+        
+        // Mover freno a la derecha (junto al acelerador)
+        brakePedal.style.left = 'auto';
+        brakePedal.style.right = '230px'; // Posición junto al gas
+    } else { 
+        steerZone.style.display = 'none'; 
+        document.getElementById('opt-gyro').className = 'option-btn active-opt'; 
+        document.getElementById('opt-slide').className = 'option-btn';
+        
+        // Freno vuelve a la izquierda (Modo Gyro/Standard)
+        brakePedal.style.right = 'auto';
+        brakePedal.style.left = '20px';
+        
+        if(typeof DeviceOrientationEvent?.requestPermission==='function') DeviceOrientationEvent.requestPermission(); 
+    }
+}
+
+// --- 2. FÍSICA DE SUSPENSIÓN Y DOWNFORCE (v10.4) ---
 const vehicle = new CANNON.RaycastVehicle({ 
     chassisBody: chassisBody, 
     indexRightAxis: 0, 
@@ -10,48 +38,44 @@ const wOpts = {
     radius: 0.38, 
     directionLocal: new CANNON.Vec3(0, -1, 0), 
     axleLocal: new CANNON.Vec3(-1, 0, 0),
-    suspensionStiffness: 55,          // Más rígida para F1
-    suspensionRestLength: 0.5,        // Recorrido equilibrado
-    frictionSlip: 3.5,                // Más agarre lateral
-    dampingRelaxation: 8.5,           // Control de rebote al subir
-    dampingCompression: 5.0,          // Control de impacto al bajar
+    suspensionStiffness: 60,          // Suspensión de competición
+    suspensionRestLength: 0.5, 
+    frictionSlip: 3.8,                // Grip máximo
+    dampingRelaxation: 9.0,           // Rebote controlado
+    dampingCompression: 6.0,          // Absorción de baches
     maxSuspensionForce: 100000, 
     chassisConnectionPointLocal: new CANNON.Vec3(0, 0, 0), 
-    maxSuspensionTravel: 0.25, 
+    maxSuspensionTravel: 0.2, 
     useCustomSlidingRotationalSpeed: true, 
     customSlidingRotationalSpeed: -30 
 };
 
-// Aplicar a las 4 ruedas
-wOpts.chassisConnectionPointLocal.set(1.2, 0.1, 1.6); vehicle.addWheel(wOpts); 
-wOpts.chassisConnectionPointLocal.set(-1.2, 0.1, 1.6); vehicle.addWheel(wOpts); 
-wOpts.chassisConnectionPointLocal.set(1.2, 0.1, -1.6); vehicle.addWheel(wOpts); 
-wOpts.chassisConnectionPointLocal.set(-1.2, 0.1, -1.6); vehicle.addWheel(wOpts);
+// ... (Aquí van los vehicle.addWheel con tus posiciones originales)
 
-vehicle.addToWorld(world);
-
-// --- DENTRO DEL LOOP ANIMATE (DOWNFORCE OPTIMIZADO) ---
+// --- 3. DENTRO DEL LOOP ANIMATE ---
 function animate() {
-    // ... (tus inputs y UI se quedan igual)
+    // ... (tus inputs previos)
 
-    const force = 3500; // Un poco más de potencia para compensar el peso
-    vehicle.applyEngineForce(-inputs.gas * force, 2); 
-    vehicle.applyEngineForce(-inputs.gas * force, 3);
+    const enginePower = 4000;
+    vehicle.applyEngineForce(-inputs.gas * enginePower, 2); 
+    vehicle.applyEngineForce(-inputs.gas * enginePower, 3);
     
-    // Frenada balanceada
-    vehicle.setBrake(inputs.brake * 150, 0); vehicle.setBrake(inputs.brake * 150, 1);
-    vehicle.setBrake(inputs.brake * 250, 2); vehicle.setBrake(inputs.brake * 250, 3);
+    // Frenos optimizados
+    vehicle.setBrake(inputs.brake * 150, 0); 
+    vehicle.setBrake(inputs.brake * 150, 1);
+    vehicle.setBrake(inputs.brake * 300, 2); // Más freno atrás para estabilidad
+    vehicle.setBrake(inputs.brake * 300, 3);
     
     vehicle.setSteeringValue(inputs.steer * 0.75, 0); 
     vehicle.setSteeringValue(inputs.steer * 0.75, 1);
 
-    // Downforce mejorado: Pega el coche al suelo según la velocidad
-    const currentSpeed = chassisBody.velocity.length();
-    if(currentSpeed > 5) {
-        // Fuerza aerodinámica vertical (Aumentada a 200 para v10.4)
-        chassisBody.applyLocalForce(new CANNON.Vec3(0, -currentSpeed * 200, 0), new CANNON.Vec3(0, 0, 0));
+    // DOWNFORCE: El "efecto suelo" que pega el coche
+    const speed = chassisBody.velocity.length();
+    if(speed > 4) {
+        // Aplicamos 200 Newtons por cada m/s de velocidad
+        chassisBody.applyLocalForce(new CANNON.Vec3(0, -speed * 200, 0), new CANNON.Vec3(0, 0, 0));
     }
 
     world.fixedStep();
-    // ... (resto del renderizado)
+    // ... (renderizado)
 }
