@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Racing Formula v10.1 (Best Cams)</title>
+    <title>Racing Formula v10.2 (Old Cam)</title>
 
     <script type="importmap">
         {
@@ -16,12 +16,9 @@
     </script>
 
     <style>
-        /* ESTILO GENERAL DARK */
         body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Segoe UI', sans-serif; touch-action: none; user-select: none; color: #ddd; }
-        
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
         
-        /* HUD */
         .hud-panel { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; border-left: 3px solid #c00; }
         #speed-val { font-size: 40px; font-weight: bold; color: #fff; font-family: monospace; }
         .hud-bar-container { width: 100px; height: 10px; background: #333; margin-top: 5px; position: relative; }
@@ -34,7 +31,6 @@
         #camera-btn { left: 80px; }
         #reset-btn { left: 140px; background: rgba(200, 0, 0, 0.5); }
 
-        /* TOUCH CONTROLS */
         #touch-controls { display: none; }
         .pedal { position: absolute; bottom: 20px; background: #222; border: 2px solid #555; width: 60px; height: 120px; border-radius: 5px; transition: 0.1s; pointer-events: auto; }
         .pedal.pressed { border-color: #fff; background: #444; }
@@ -54,7 +50,6 @@
         }
         #steering-zone::after { content: ''; position: absolute; left: 50%; top: 20%; height: 60%; width: 2px; background: rgba(255,255,255,0.1); transform: translateX(-50%); }
 
-        /* MIRAR ATRAS */
         #touch-look {
             position: absolute; bottom: 130px; left: 120px; width: 60px; height: 60px; 
             background: rgba(0,0,0,0.5); border: 2px solid #aaa; border-radius: 50%;
@@ -63,7 +58,6 @@
         }
         #touch-look:active { background: #fff; color: #000; border-color: #fff; }
 
-        /* TELEMETRY */
         #telemetry-app {
             position: absolute; bottom: 160px; right: 20px; width: 100px; height: 80px;
             background: rgba(0, 0, 0, 0.6); border: 1px solid #444; padding: 5px; pointer-events: none;
@@ -76,7 +70,6 @@
         .tel-steer-row { height: 10px; background: #222; border: 1px solid #555; position: relative; margin-top: 5px; }
         #tel-steer-marker { width: 4px; height: 100%; background: #00ffff; position: absolute; left: 50%; top: 0; transform: translateX(-50%); }
 
-        /* MENU */
         #modal { position: fixed; top:0; left:0; width:100%; height:100%; background: #111; z-index: 200; display: flex; flex-direction: column; overflow: hidden; }
         .modal-header { padding: 20px; background: #222; border-bottom: 1px solid #c00; display: flex; justify-content: space-between; align-items: center; }
         .modal-title { font-size: 20px; color: #fff; font-weight: bold; text-transform: uppercase; }
@@ -105,7 +98,6 @@
 </head>
 <body>
 
-    <!-- JUEGO UI -->
     <div id="ui-layer">
         <button id="settings-btn" class="top-btn">⚙️</button>
         <button id="camera-btn" class="top-btn">🎥</button>
@@ -127,7 +119,6 @@
             <div class="tel-steer-row"><div id="tel-steer-marker"></div></div>
         </div>
 
-        <!-- CONTROLES TÁCTILES -->
         <div id="touch-controls">
             <div id="steering-zone">
                 <div id="steer-indicator"></div>
@@ -140,10 +131,9 @@
         </div>
     </div>
 
-    <!-- MENU CONFIG -->
     <div id="modal">
         <div class="modal-header">
-            <div class="modal-title">Configuración v10.1</div>
+            <div class="modal-title">Configuración v10.2</div>
             <button id="play-btn">GUARDAR Y JUGAR</button>
         </div>
         <div class="modal-body">
@@ -342,7 +332,6 @@
         const carMesh = new THREE.Group();
         const redMat = new THREE.MeshStandardMaterial({ color: 0xff1100 });
         const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-        // Partes divididas
         const rearBody = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.3, 1.5), redMat);
         rearBody.position.set(0, 0.2, -1.2); rearBody.castShadow = true; carMesh.add(rearBody);
         const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 1.5), redMat);
@@ -421,14 +410,14 @@
                     offset = new THREE.Vector3(0, 4, 8).applyMatrix4(carMesh.matrixWorld); 
                     lookAt = carMesh.position.clone(); 
                 } else { 
-                    // CLASSIC CHASE CAM (Restored)
+                    // CLASSIC CHASE (0, 4, -8)
                     offset = new THREE.Vector3(0, 4, -8).applyMatrix4(carMesh.matrixWorld); 
                     lookAt = carMesh.position.clone(); 
                 }
                 camera.position.lerp(offset, 0.1); 
                 camera.lookAt(lookAt);
             } else {
-                // RESTORED OLD COCKPIT LOGIC
+                // OLD COCKPIT LOGIC RESTORED
                 offset = new THREE.Vector3(0, 0.85, 0.5).applyMatrix4(carMesh.matrixWorld);
                 camera.position.copy(offset);
                 if (inputs.look) lookAt = new THREE.Vector3(0, 0.85, -10).applyMatrix4(carMesh.matrixWorld);
