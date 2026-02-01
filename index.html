@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Racing Formula Beta v5</title>
+    <title>Racing Formula Beta v6 (G923 Fix)</title>
 
     <script type="importmap">
         {
@@ -30,39 +30,24 @@
         #reset-btn { left: 140px; background: rgba(200, 0, 0, 0.5); }
         #calibrate-btn { left: 200px; background: rgba(0, 100, 200, 0.5); font-size: 18px; }
 
-        #speed-box {
-            position: absolute; top: 20px; right: 20px; text-align: right; color: #0ff; text-shadow: 0 0 5px #0ff; font-family: monospace;
-        }
+        #speed-box { position: absolute; top: 20px; right: 20px; text-align: right; color: #0ff; text-shadow: 0 0 5px #0ff; font-family: monospace; }
         #speed-val { font-size: 40px; font-weight: bold; line-height: 1; }
         #gear-val { font-size: 16px; color: #fff; }
 
-        /* --- ASSETTO STYLE TELEMETRY HUD --- */
+        /* ASSETTO HUD */
         #telemetry-app {
-            position: absolute; bottom: 20px; right: 20px;
-            width: 120px; height: 100px;
-            background: rgba(0, 0, 0, 0.6);
-            border-radius: 5px;
-            border: 1px solid #444;
-            padding: 5px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
+            position: absolute; bottom: 20px; right: 20px; width: 120px; height: 100px;
+            background: rgba(0, 0, 0, 0.6); border-radius: 5px; border: 1px solid #444; padding: 5px;
+            display: flex; flex-direction: column; gap: 5px;
         }
         .tel-bars-row { display: flex; height: 70px; gap: 5px; justify-content: flex-end; }
         .tel-col { width: 15px; background: #222; position: relative; border: 1px solid #555; }
         .tel-fill { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; transition: height 0.05s; }
-        #tel-gas-fill { background: #00ff00; }
-        #tel-brake-fill { background: #ff0000; }
-        
+        #tel-gas-fill { background: #00ff00; } #tel-brake-fill { background: #ff0000; }
         .tel-steer-row { height: 15px; background: #222; border: 1px solid #555; position: relative; margin-top: 5px; }
-        #tel-steer-marker {
-            width: 4px; height: 100%; background: #00ffff;
-            position: absolute; left: 50%; top: 0;
-            transform: translateX(-50%);
-        }
-        #tel-label { color: #888; font-size: 10px; text-align: center; width: 100%; margin-top: -20px; }
+        #tel-steer-marker { width: 4px; height: 100%; background: #00ffff; position: absolute; left: 50%; top: 0; transform: translateX(-50%); }
 
-        /* PEDALES TÁCTILES */
+        /* PEDALES & SLIDER */
         .pedal {
             position: absolute; bottom: 20px; background: linear-gradient(to bottom, #333, #111);
             border: 2px solid #555; border-radius: 6px; box-shadow: 0 5px 10px rgba(0,0,0,0.5);
@@ -72,22 +57,16 @@
             transition: transform 0.1s; touch-action: none; 
         }
         .pedal:active, .pedal.pressed { transform: scale(0.95) translateY(3px); color: white; border-color: white; }
-
         #gas-pedal { right: 150px; width: 70px; height: 160px; border-bottom: 5px solid #00cc00; }
         #gas-pedal.pressed { background-color: #040; box-shadow: 0 0 15px #0f0; }
-
         #brake-pedal { width: 90px; height: 90px; border-bottom: 5px solid #cc0000; }
         #brake-pedal.pressed { background-color: #400; box-shadow: 0 0 15px #f00; }
-
         .mode-slide #brake-pedal { left: auto; right: 240px; }
         .mode-gyro #brake-pedal { right: auto; left: 30px; #gas-pedal { right: 20px; } }
 
-        /* SLIDER */
         #steering-zone {
-            position: absolute; bottom: 30px; left: 30px;
-            width: 240px; height: 80px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 40px; border: 1px solid rgba(255,255,255,0.1);
+            position: absolute; bottom: 30px; left: 30px; width: 240px; height: 80px;
+            background: rgba(255, 255, 255, 0.05); border-radius: 40px; border: 1px solid rgba(255,255,255,0.1);
             pointer-events: auto; display: flex; justify-content: space-between; align-items: center;
             padding: 0 10px; box-sizing: border-box; touch-action: none; overflow: hidden;
         }
@@ -104,24 +83,29 @@
 
         /* MENÚ */
         #modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 200; display: flex; justify-content: center; align-items: center; }
-        .modal-content { background: #222; padding: 20px; border-radius: 10px; color: white; width: 90%; max-width: 400px; max-height: 90vh; overflow-y: auto; text-align: center; }
+        .modal-content { background: #222; padding: 20px; border-radius: 10px; color: white; width: 90%; max-width: 400px; max-height: 95vh; overflow-y: auto; text-align: center; }
+        
         h2 { margin: 0 0 15px 0; color: #fff; font-size: 20px; border-bottom: 2px solid #c00; padding-bottom: 10px; }
         h3 { font-size: 14px; color: #888; margin: 15px 0 5px 0; text-transform: uppercase; letter-spacing: 1px; }
         .option-btn { width: 100%; padding: 12px; margin-top: 5px; font-size: 14px; border: none; border-radius: 5px; cursor: pointer; background: #333; color: #ccc; border: 1px solid #444; }
         .active-opt { border: 1px solid #0ff; color: #fff; background: #224444; box-shadow: 0 0 8px rgba(0,255,255,0.3); }
         .play-btn { background: #c00; color: white; font-weight: bold; margin-top: 25px; border: none; font-size: 18px; }
-        
         .map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         .map-btn { background: #222; border: 1px solid #555; color: white; padding: 10px; cursor: pointer; border-radius: 4px; font-size: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .map-btn span { font-size: 10px; color: #888; margin-top: 3px; }
         .mapping-active { background: #c00 !important; animation: blink 0.5s infinite alternate; }
         @keyframes blink { from { opacity: 1; } to { opacity: 0.5; } }
-
-        /* Slider Sensibilidad */
+        
         .slide-container { width: 100%; margin: 10px 0; text-align: left; }
         .slider-range { width: 100%; }
         #sens-val { float: right; color: #0ff; }
-        label { font-size: 12px; color: #aaa; }
+        
+        /* DIAGNOSTIC BOX */
+        #input-debug-box {
+            width: 100%; height: 60px; background: #000; border: 1px solid #333; 
+            font-family: monospace; font-size: 10px; color: #0f0; 
+            text-align: left; padding: 5px; overflow-y: auto; margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -134,16 +118,13 @@
         <button id="reset-btn" class="top-btn">🔄</button>
         <button id="calibrate-btn" class="top-btn hidden">🎯</button>
 
-        <!-- ASSETTO CORSA HUD -->
         <div id="telemetry-app">
             <div class="tel-bars-row">
                 <div class="tel-col"><div id="tel-brake-fill" class="tel-fill"></div></div>
                 <div class="tel-col"><div id="tel-gas-fill" class="tel-fill"></div></div>
             </div>
-            <div id="tel-label">INPUTS</div>
-            <div class="tel-steer-row">
-                <div id="tel-steer-marker"></div>
-            </div>
+            <div id="tel-label" style="color:#aaa; font-size:9px; text-align:center">INPUT</div>
+            <div class="tel-steer-row"><div id="tel-steer-marker"></div></div>
         </div>
 
         <div id="steering-zone">
@@ -158,7 +139,7 @@
 
     <div id="modal">
         <div class="modal-content">
-            <h2>Racing Formula Beta v5</h2>
+            <h2>Racing Formula v6</h2>
             
             <h3>Modo Móvil</h3>
             <div class="map-grid">
@@ -166,18 +147,21 @@
                 <button id="opt-gyro" class="option-btn">GIROSCOPIO</button>
             </div>
 
-            <h3>Sensibilidad Volante</h3>
-            <div class="slide-container">
-                <label>Linealidad: <span id="sens-val">1.0</span></label>
-                <input type="range" min="1.0" max="3.0" step="0.1" value="1.0" class="slider-range" id="sens-slider">
+            <h3>Volante / Gamepad</h3>
+            <div id="gp-status" style="font-size:11px; color:#aaa;">Conecta tu G923...</div>
+            
+            <!-- MONITOR DE DIAGNÓSTICO -->
+            <div id="input-debug-box">Mueve controles para ver datos raw...</div>
+
+            <div class="map-grid">
+                <button class="map-btn" onclick="startMap('gp', 'gas')">GAS <span id="lbl-gp-gas">-</span></button>
+                <button class="map-btn" onclick="startMap('gp', 'brake')">FRENO <span id="lbl-gp-brake">-</span></button>
+                <button class="map-btn" style="grid-column: span 2;" onclick="startMap('gp', 'steer')">VOLANTE <span id="lbl-gp-steer">-</span></button>
             </div>
 
-            <h3>Gamepad / Volante</h3>
-            <div id="gp-status" style="font-size:11px; color:#0f0; margin-bottom:5px">Esperando...</div>
-            <div class="map-grid">
-                <button class="map-btn" onclick="startMap('gp', 'gas')">GAS <span id="lbl-gp-gas">BTN 7</span></button>
-                <button class="map-btn" onclick="startMap('gp', 'brake')">FRENO <span id="lbl-gp-brake">BTN 6</span></button>
-                <button class="map-btn" style="grid-column: span 2;" onclick="startMap('gp', 'steer')">VOLANTE <span id="lbl-gp-steer">AXIS 0</span></button>
+            <div class="slide-container">
+                <label>Sensibilidad Volante: <span id="sens-val">1.0</span></label>
+                <input type="range" min="0.5" max="2.0" step="0.1" value="1.0" class="slider-range" id="sens-slider">
             </div>
 
             <h3>Teclado</h3>
@@ -196,22 +180,25 @@
         import * as THREE from 'three';
         import * as CANNON from 'cannon-es';
 
-        // --- CONFIGURACIÓN V5 ---
+        // --- CONFIG ---
         const defaultConfig = {
             sensitivity: 1.0,
             keys: { gas: 'w', brake: 's', left: 'a', right: 'd' },
-            gp: { gas: { type: 'button', index: 7 }, brake: { type: 'button', index: 6 }, steer: { type: 'axis', index: 0 } }
+            gp: { 
+                gas: { type: 'button', index: 7 }, 
+                brake: { type: 'button', index: 6 }, 
+                steer: { type: 'axis', index: 0 } 
+            }
         };
-        let userConfig = JSON.parse(localStorage.getItem('f1_v5_config')) || defaultConfig;
+        let userConfig = JSON.parse(localStorage.getItem('f1_v6_config')) || defaultConfig;
 
         function saveConfig() {
-            localStorage.setItem('f1_v5_config', JSON.stringify(userConfig));
+            localStorage.setItem('f1_v6_config', JSON.stringify(userConfig));
             updateUI();
         }
 
-        // --- ESTADO ---
         const controls = { gas: 0, brake: 0, steer: 0, rawSteerKey: 0, rawSteerPad: 0, rawSteerTouch: 0 };
-        const state = { controlMode: 'slide', cameraMode: 'chase', gyroEnabled: false, rawGyro: 0, gyroOffset: 0, mapping: null };
+        const state = { controlMode: 'slide', cameraMode: 'chase', gyroEnabled: false, rawGyro: 0, gyroOffset: 0, mapping: null, gpSnapshot: [] };
 
         // --- UI ---
         const uiLayer = document.getElementById('ui-layer');
@@ -221,25 +208,37 @@
         const calibrateBtn = document.getElementById('calibrate-btn');
         const sensSlider = document.getElementById('sens-slider');
         const sensVal = document.getElementById('sens-val');
+        const debugBox = document.getElementById('input-debug-box');
 
-        // Inicialización UI
         sensSlider.value = userConfig.sensitivity;
         sensVal.innerText = userConfig.sensitivity;
-        
         sensSlider.addEventListener('input', (e) => {
             userConfig.sensitivity = parseFloat(e.target.value);
             sensVal.innerText = userConfig.sensitivity;
             saveConfig();
         });
 
-        // --- MAPEO ---
+        // --- MAPEO ROBUSTO ---
         window.startMap = function(device, action) {
+            // Guardar estado actual de todos los ejes para comparar cambios
+            const gp = navigator.getGamepads ? navigator.getGamepads()[0] : null;
+            if(gp && device === 'gp') {
+                state.gpSnapshot = gp.axes.slice(); // Copia de valores actuales
+            }
+            
             state.mapping = { device, action };
             const btn = event.target.closest('button');
             const originalText = btn.innerHTML;
             btn.classList.add('mapping-active');
-            btn.innerHTML = "MOVER AHORA...";
-            setTimeout(() => { if (state.mapping && state.mapping.action === action) { state.mapping = null; btn.classList.remove('mapping-active'); btn.innerHTML = originalText; } }, 5000);
+            btn.innerHTML = "MUEVE EL CONTROL...";
+            
+            setTimeout(() => { 
+                if (state.mapping && state.mapping.action === action) { 
+                    state.mapping = null; 
+                    btn.classList.remove('mapping-active'); 
+                    btn.innerHTML = originalText; 
+                } 
+            }, 6000); // 6 segundos para mapear
         }
 
         function updateUI() {
@@ -254,63 +253,97 @@
         }
         updateUI();
 
-        // --- INPUT: TECLADO ---
-        window.addEventListener('keydown', (e) => {
-            const key = e.key.toLowerCase();
-            if (state.mapping && state.mapping.device === 'key') {
-                userConfig.keys[state.mapping.action] = key; saveConfig();
-                document.querySelectorAll('.mapping-active').forEach(b => b.classList.remove('mapping-active')); state.mapping = null; return;
-            }
-            if (key === userConfig.keys.gas) { controls.gas = 1; document.getElementById('gas-pedal').classList.add('pressed'); }
-            if (key === userConfig.keys.brake) { controls.brake = 1; document.getElementById('brake-pedal').classList.add('pressed'); }
-            if (key === userConfig.keys.left) controls.rawSteerKey = 1; 
-            if (key === userConfig.keys.right) controls.rawSteerKey = -1;
-        });
-        window.addEventListener('keyup', (e) => {
-            const key = e.key.toLowerCase();
-            if (key === userConfig.keys.gas) { controls.gas = 0; document.getElementById('gas-pedal').classList.remove('pressed'); }
-            if (key === userConfig.keys.brake) { controls.brake = 0; document.getElementById('brake-pedal').classList.remove('pressed'); }
-            if (key === userConfig.keys.left || key === userConfig.keys.right) controls.rawSteerKey = 0;
-        });
-
-        // --- INPUT: GAMEPAD (AXIS SUPPORT) ---
+        // --- GAMEPAD / WHEEL LOGIC (FIXED) ---
         function pollGamepads() {
             const gp = navigator.getGamepads ? navigator.getGamepads()[0] : null;
             if (gp) {
-                document.getElementById('gp-status').innerText = "Conectado: " + gp.id.substring(0,15);
+                // Debug Monitor
+                let debugText = `ID: ${gp.id.substring(0,10)}.. `;
+                // Mostrar solo ejes activos
+                gp.axes.forEach((v,i) => { if(Math.abs(v)>0.1) debugText += `AX${i}:${v.toFixed(2)} `; });
+                gp.buttons.forEach((b,i) => { if(b.pressed) debugText += `B${i} `; });
+                if(modal.style.zIndex == "200") debugBox.innerText = debugText; // Solo actualizar si menú abierto
+
+                document.getElementById('gp-status').innerText = "Conectado";
+                document.getElementById('gp-status').style.color = "#0f0";
+
+                // MODO MAPEO
                 if (state.mapping && state.mapping.device === 'gp') {
+                    // Check Buttons
                     gp.buttons.forEach((b, i) => { if(b.pressed) finishGpMap('button', i); });
-                    gp.axes.forEach((a, i) => { if(Math.abs(a) > 0.5) finishGpMap('axis', i); });
+                    // Check Axes con DELTA (Comparar con snapshot)
+                    gp.axes.forEach((val, i) => {
+                        const prev = state.gpSnapshot[i] || 0;
+                        if(Math.abs(val - prev) > 0.4) { // Umbral de cambio significativo
+                            finishGpMap('axis', i); 
+                        }
+                    });
                     return;
                 }
-                // Lectura Juego
+
+                // MODO JUEGO
                 const read = (cfg) => {
                     if (cfg.type === 'button') return gp.buttons[cfg.index]?.value || 0;
-                    return Math.abs(gp.axes[cfg.index]) > 0.1 ? gp.axes[cfg.index] : 0; // Ejes con Deadzone
+                    // Fix para G923 y pedales que van de -1 a 1 o 1 a -1
+                    let val = gp.axes[cfg.index] || 0;
+                    // Si el usuario mapeó un eje como pedal, normalizamos
+                    return Math.abs(val); 
                 };
                 
-                // Pedales (Normalizados 0-1)
+                // Pedales
                 let g = read(userConfig.gp.gas);
-                if (userConfig.gp.gas.type === 'axis' && g < 0) g = 0; // Fix ejes -1 a 1 para pedales simples
-                if (g > 0) controls.gas = g;
+                // Si es eje, a veces 1 es suelto y -1 pisado o viceversa. Usamos lógica simple >0.1
+                // Mejora: si es eje, mapear (val + 1) / 2 suele ser pedal
+                if(userConfig.gp.gas.type === 'axis') {
+                    // Intento de auto-detectar pedales invertidos comun en Logitech
+                    g = (g + 1) / 2; // Convertir -1..1 a 0..1
+                }
+                if (Math.abs(gp.axes[userConfig.gp.gas.index]) > 0.1 || g > 0.1) controls.gas = g;
 
                 let b = read(userConfig.gp.brake);
-                if (userConfig.gp.brake.type === 'axis' && b < 0) b = 0;
-                if (b > 0) controls.brake = b;
+                if(userConfig.gp.brake.type === 'axis') b = (b + 1) / 2;
+                if (Math.abs(gp.axes[userConfig.gp.brake.index]) > 0.1 || b > 0.1) controls.brake = b;
 
-                // Volante (Directo -1 a 1)
+                // Volante
                 const sCfg = userConfig.gp.steer;
-                let s = (sCfg.type === 'axis') ? gp.axes[sCfg.index] : 0;
-                if (Math.abs(s) > 0.05) controls.rawSteerPad = -s; else controls.rawSteerPad = 0;
+                if (sCfg.type === 'axis') {
+                    controls.rawSteerPad = gp.axes[sCfg.index];
+                    // Zona muerta pequeña
+                    if(Math.abs(controls.rawSteerPad) < 0.05) controls.rawSteerPad = 0;
+                }
 
-            } else { document.getElementById('gp-status').innerText = "Sin mando..."; }
+            } else { 
+                document.getElementById('gp-status').innerText = "Sin mando (Pulsa cualquier botón)";
+                document.getElementById('gp-status').style.color = "#777";
+            }
         }
+
         function finishGpMap(type, index) {
-            userConfig.gp[state.mapping.action] = { type, index }; saveConfig();
-            document.querySelectorAll('.mapping-active').forEach(b => b.classList.remove('mapping-active')); state.mapping = null;
+            userConfig.gp[state.mapping.action] = { type, index }; 
+            saveConfig();
+            document.querySelectorAll('.mapping-active').forEach(b => b.classList.remove('mapping-active')); 
+            state.mapping = null;
         }
 
-        // --- INPUT: TOUCH ---
+        // --- KEYBOARD ---
+        window.addEventListener('keydown', (e) => {
+            const k = e.key.toLowerCase();
+            if (state.mapping && state.mapping.device === 'key') {
+                userConfig.keys[state.mapping.action] = k; saveConfig();
+                document.querySelectorAll('.mapping-active').forEach(b => b.classList.remove('mapping-active')); state.mapping = null; return;
+            }
+            if (k===userConfig.keys.gas) { controls.gas=1; document.getElementById('gas-pedal').classList.add('pressed'); }
+            if (k===userConfig.keys.brake) { controls.brake=1; document.getElementById('brake-pedal').classList.add('pressed'); }
+            if (k===userConfig.keys.left) controls.rawSteerKey=1; if (k===userConfig.keys.right) controls.rawSteerKey=-1;
+        });
+        window.addEventListener('keyup', (e) => {
+            const k = e.key.toLowerCase();
+            if (k===userConfig.keys.gas) { controls.gas=0; document.getElementById('gas-pedal').classList.remove('pressed'); }
+            if (k===userConfig.keys.brake) { controls.brake=0; document.getElementById('brake-pedal').classList.remove('pressed'); }
+            if (k===userConfig.keys.left || k===userConfig.keys.right) controls.rawSteerKey=0;
+        });
+
+        // --- TOUCH ---
         let zoneRect = steerZone.getBoundingClientRect();
         function handleSteerInput(clientX) {
             const centerX = zoneRect.left + zoneRect.width/2;
@@ -334,38 +367,35 @@
             el.addEventListener('touchend', (e)=>{ e.preventDefault(); set(0); }, {passive:false});
             el.addEventListener('mousedown', ()=>set(1)); el.addEventListener('mouseup', ()=>set(0));
         };
-        bindTouch('gas-pedal', 'gas'); bindTouch('brake-pedal', 'brake');
-        window.addEventListener('resize', () => zoneRect = steerZone.getBoundingClientRect());
+        // Para inputs tactiles usamos logica interna directa
+        const touchInputs = { gas:0, brake:0 };
+        document.getElementById('gas-pedal').addEventListener('touchstart', (e)=>{e.preventDefault(); touchInputs.gas=1; controls.gas=1; document.getElementById('gas-pedal').classList.add('pressed')});
+        document.getElementById('gas-pedal').addEventListener('touchend', (e)=>{e.preventDefault(); touchInputs.gas=0; controls.gas=0; document.getElementById('gas-pedal').classList.remove('pressed')});
+        document.getElementById('brake-pedal').addEventListener('touchstart', (e)=>{e.preventDefault(); touchInputs.brake=1; controls.brake=1; document.getElementById('brake-pedal').classList.add('pressed')});
+        document.getElementById('brake-pedal').addEventListener('touchend', (e)=>{e.preventDefault(); touchInputs.brake=0; controls.brake=0; document.getElementById('brake-pedal').classList.remove('pressed')});
 
-        // --- MENÚ ---
+        // --- MENU ---
         setControlMode('slide');
         function setControlMode(mode) {
             state.controlMode = mode;
             document.getElementById('opt-slide').className = mode === 'slide' ? 'option-btn active-opt' : 'option-btn';
             document.getElementById('opt-gyro').className = mode === 'gyro' ? 'option-btn active-opt' : 'option-btn';
-            if (mode === 'slide') {
-                uiLayer.classList.remove('mode-gyro'); uiLayer.classList.add('mode-slide');
-                steerZone.classList.remove('hidden'); calibrateBtn.classList.add('hidden');
-            } else {
-                uiLayer.classList.remove('mode-slide'); uiLayer.classList.add('mode-gyro');
-                steerZone.classList.add('hidden'); calibrateBtn.classList.remove('hidden');
-                enableGyro();
-            }
+            if (mode === 'slide') { uiLayer.classList.remove('mode-gyro'); uiLayer.classList.add('mode-slide'); steerZone.classList.remove('hidden'); calibrateBtn.classList.add('hidden'); } 
+            else { uiLayer.classList.remove('mode-slide'); uiLayer.classList.add('mode-gyro'); steerZone.classList.add('hidden'); calibrateBtn.classList.remove('hidden'); enableGyro(); }
         }
         document.getElementById('settings-btn').addEventListener('click', () => modal.classList.remove('modal-hidden'));
         document.getElementById('close-btn').addEventListener('click', () => { modal.classList.add('modal-hidden'); calibrateGyro(); });
         document.getElementById('opt-slide').addEventListener('click', () => setControlMode('slide'));
         document.getElementById('opt-gyro').addEventListener('click', () => setControlMode('gyro'));
         document.getElementById('camera-btn').addEventListener('click', () => state.cameraMode = (state.cameraMode === 'chase') ? 'cockpit' : 'chase');
-        document.getElementById('reset-btn').addEventListener('click', () => {
-            if(chassisBody) { chassisBody.position.set(0, 3, 0); chassisBody.quaternion.set(0,0,0,1); chassisBody.velocity.set(0,0,0); chassisBody.angularVelocity.set(0,0,0); }
-        });
+        document.getElementById('reset-btn').addEventListener('click', () => { if(chassisBody) { chassisBody.position.set(0, 3, 0); chassisBody.quaternion.set(0,0,0,1); chassisBody.velocity.set(0,0,0); chassisBody.angularVelocity.set(0,0,0); } });
         document.getElementById('calibrate-btn').addEventListener('click', calibrateGyro);
         function calibrateGyro() { if(state.controlMode === 'gyro') { state.gyroOffset = state.rawGyro; calibrateBtn.style.background = "#0f0"; setTimeout(()=>calibrateBtn.style.background="rgba(0,100,200,0.5)", 200); }}
         function enableGyro() { if(typeof DeviceOrientationEvent?.requestPermission === 'function') DeviceOrientationEvent.requestPermission().then(r => { if(r==='granted') state.gyroEnabled = true; }); else state.gyroEnabled = true; }
         window.addEventListener('deviceorientation', (e) => { const l = window.innerWidth > window.innerHeight; if (l) { if(e.beta!=null) state.rawGyro = e.beta; } else { if(e.gamma!=null) state.rawGyro = e.gamma; } });
+        window.addEventListener('resize', () => zoneRect = steerZone.getBoundingClientRect());
 
-        // --- 3D ENGINE ---
+        // --- 3D SETUP ---
         const scene = new THREE.Scene(); scene.background = new THREE.Color(0x1a1a1a); scene.fog = new THREE.Fog(0x1a1a1a, 20, 150);
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.05, 500);
         const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setSize(window.innerWidth, window.innerHeight); renderer.shadowMap.enabled = true; document.body.appendChild(renderer.domElement);
@@ -377,7 +407,6 @@
         const groundBody = new CANNON.Body({ mass: 0, material: groundMat }); groundBody.addShape(new CANNON.Plane()); groundBody.quaternion.setFromEuler(-Math.PI/2, 0, 0); world.addBody(groundBody);
         const grid = new THREE.GridHelper(500, 100, 0x444444, 0x222222); scene.add(grid);
 
-        // --- COCHE ---
         const chassisBody = new CANNON.Body({ mass: 200, material: groundMat }); 
         chassisBody.addShape(new CANNON.Box(new CANNON.Vec3(0.75, 0.15, 2.2)), new CANNON.Vec3(0, 0.2, 0)); 
         chassisBody.position.set(0, 2, 0); chassisBody.angularDamping = 0.5; chassisBody.linearDamping = 0.05; chassisBody.allowSleep = false;
@@ -403,12 +432,12 @@
             requestAnimationFrame(animate);
             pollGamepads();
 
-            // LÓGICA DE CONTROL
+            // INPUT MIXING
             let finalSteer = 0;
             const MAX_STEER = 0.75;
 
-            // Prioridad de Inputs
-            if (Math.abs(controls.rawSteerPad) > 0.1) finalSteer = controls.rawSteerPad;
+            // Prioridad: Pad > Key > Slider > Gyro
+            if (Math.abs(controls.rawSteerPad) > 0.05) finalSteer = controls.rawSteerPad;
             else if (controls.rawSteerKey !== 0) finalSteer = controls.rawSteerKey;
             else if (state.controlMode === 'slide') finalSteer = controls.rawSteerTouch;
             else if (state.controlMode === 'gyro' && state.gyroEnabled) {
@@ -416,30 +445,25 @@
                 finalSteer = -(Math.max(-35, Math.min(35, calibrated)) / 35); 
             }
 
-            // Aplicar Sensibilidad (Linealidad)
-            // Fórmula: input * |input|^(sens-1)
-            let sensitivity = userConfig.sensitivity || 1.0;
-            let curvedSteer = Math.pow(Math.abs(finalSteer), sensitivity) * Math.sign(finalSteer);
-            
-            // HUD DE TELEMETRÍA (ACTUALIZAR BARRAS)
+            // Sensibilidad
+            const sens = userConfig.sensitivity || 1.0;
+            const curvedSteer = Math.pow(Math.abs(finalSteer), sens) * Math.sign(finalSteer);
+
+            // TELEMETRY
             document.getElementById('tel-gas-fill').style.height = (controls.gas * 100) + '%';
             document.getElementById('tel-brake-fill').style.height = (controls.brake * 100) + '%';
-            let steerPct = (curvedSteer * 50) + 50; // Map -1..1 to 0..100
-            document.getElementById('tel-steer-marker').style.left = steerPct + '%';
+            document.getElementById('tel-steer-marker').style.left = ((curvedSteer * 50) + 50) + '%';
 
-            // VISUAL
             wheelVis.rotation.z = -curvedSteer * 2; 
 
-            // FISICAS
-            const steerAngle = curvedSteer * MAX_STEER;
+            // PHYSICS
             const force = 2500; 
             vehicle.applyEngineForce(-controls.gas * force, 2); vehicle.applyEngineForce(-controls.gas * force, 3);
             const brakeForce = 100;
             vehicle.setBrake(controls.brake * (brakeForce*0.5), 0); vehicle.setBrake(controls.brake * (brakeForce*0.5), 1);
             vehicle.setBrake(controls.brake * brakeForce, 2); vehicle.setBrake(controls.brake * brakeForce, 3);
-            vehicle.setSteeringValue(steerAngle, 0); vehicle.setSteeringValue(steerAngle, 1);
+            vehicle.setSteeringValue(curvedSteer * MAX_STEER, 0); vehicle.setSteeringValue(curvedSteer * MAX_STEER, 1);
 
-            // AERODINÁMICA
             const speed = chassisBody.velocity.length();
             if(speed > 5) chassisBody.applyLocalForce(new CANNON.Vec3(0, -speed * 160, 0), new CANNON.Vec3(0, 0, 0));
 
