@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1: Big Rear Wheels</title>
+    <title>F1: Final Fixed UI & Scale</title>
 
     <script type="importmap">
         {
@@ -16,258 +16,441 @@
     </script>
 
     <style>
-        body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Segoe UI', sans-serif; touch-action: none; user-select: none; }
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
-        .top-btn { position: absolute; top: 20px; font-size: 24px; background: rgba(0,0,0,0.5); color: white; border: 1px solid #555; border-radius: 8px; width: 50px; height: 50px; cursor: pointer; pointer-events: auto; display: flex; justify-content: center; align-items: center; }
-        #settings-btn { left: 20px; } #camera-btn { left: 80px; } #reset-btn { left: 140px; background: rgba(200, 0, 0, 0.5); } #lookback-btn { left: 200px; background: rgba(255, 165, 0, 0.5); } #calibrate-btn { left: 260px; background: rgba(0, 100, 200, 0.5); font-size: 18px; }
-        #speed-box { position: absolute; top: 20px; right: 20px; text-align: right; color: #0ff; text-shadow: 0 0 5px #0ff; font-family: monospace; }
-        #speed-val { font-size: 40px; font-weight: bold; line-height: 1; }
-        #gear-val { font-size: 16px; color: #fff; }
-        #input-notify { position: absolute; top: 80px; left: 20px; background: #fff; color: #000; padding: 8px 15px; border-radius: 4px; font-weight: bold; font-size: 14px; opacity: 0; transition: opacity 0.5s; box-shadow: 0 0 10px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 8px; }
-        .touch-control { transition: opacity 0.5s, transform 0.5s; opacity: 1; } .ui-hidden .touch-control { opacity: 0 !important; pointer-events: none !important; transform: translateY(20px); }
-        .pedal { position: absolute; bottom: 20px; background: linear-gradient(to bottom, #333, #111); border: 2px solid #555; border-radius: 6px; box-shadow: 0 5px 10px rgba(0,0,0,0.5); pointer-events: auto; display: flex; justify-content: center; align-items: flex-end; color: #aaa; font-size: 12px; font-weight: bold; padding-bottom: 8px; background-image: repeating-linear-gradient(0deg, transparent, transparent 10px, #000 10px, #000 12px); touch-action: none; }
-        .pedal:active, .pedal.pressed { transform: scale(0.95) translateY(3px); color: white; border-color: white; }
-        #gas-pedal { right: 20px; width: 70px; height: 160px; border-bottom: 5px solid #00cc00; } #gas-pedal.pressed { background-color: #040; box-shadow: 0 0 15px #0f0; }
-        #brake-pedal { width: 90px; height: 90px; border-bottom: 5px solid #cc0000; } #brake-pedal.pressed { background-color: #400; box-shadow: 0 0 15px #f00; }
-        .mode-slide #brake-pedal { left: auto; right: 110px; } .mode-gyro #brake-pedal { right: auto; left: 30px; }
-        #steering-zone { position: absolute; bottom: 30px; left: 30px; width: 240px; height: 80px; background: rgba(255, 255, 255, 0.05); border-radius: 40px; border: 1px solid rgba(255,255,255,0.1); pointer-events: auto; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; box-sizing: border-box; touch-action: none; overflow: hidden; }
-        .arrow-vis { font-size: 30px; opacity: 0.5; pointer-events: none; user-select: none; }
-        #steer-indicator { position: absolute; top: 0; left: 50%; width: 4px; height: 100%; background: rgba(255, 50, 50, 0.8); box-shadow: 0 0 10px red; transform: translateX(-50%); transition: transform 0.05s linear; }
-        #steering-zone::after { content: ''; position: absolute; left: 50%; top: 20%; height: 60%; width: 2px; background: rgba(255,255,255,0.1); transform: translateX(-50%); }
-        .hidden { display: none !important; } .modal-hidden { display: none !important; }
-        #modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 200; display: flex; justify-content: center; align-items: center; }
-        .modal-content { background: #222; padding: 20px; border-radius: 10px; color: white; width: 300px; text-align: center; }
-        .option-btn { width: 100%; padding: 15px; margin-top: 10px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer; background: #444; color: #aaa; }
-        .active-opt { border: 2px solid #0ff; color: #fff; background: #333; box-shadow: 0 0 10px #0ff; }
-        .play-btn { background: #c00; color: white; font-weight: bold; margin-top: 20px; color: white; }
+        /* RESET BÁSICO */
+        body { margin: 0; overflow: hidden; background: #222; font-family: 'Segoe UI', sans-serif; touch-action: none; user-select: none; }
+        
+        /* CAPA DE INTERFAZ (UI) */
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10; pointer-events: none; /* Deja pasar clicks al juego si no tocas un botón */
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        /* BOTONES SUPERIORES (BARRA) */
+        .top-bar {
+            padding: 15px; display: flex; gap: 10px; pointer-events: auto;
+        }
+        .icon-btn {
+            width: 50px; height: 50px; background: rgba(0,0,0,0.6); color: white;
+            border: 1px solid #555; border-radius: 10px; font-size: 24px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            transition: background 0.2s;
+        }
+        .icon-btn:hover { background: rgba(255,255,255,0.2); }
+        .icon-btn:active { transform: scale(0.95); }
+
+        /* VELOCÍMETRO */
+        #speed-box {
+            position: absolute; top: 15px; right: 20px; text-align: right;
+            color: #0ff; text-shadow: 0 0 8px #0ff; font-family: 'Courier New', monospace;
+            pointer-events: none;
+        }
+        #speed-val { font-size: 45px; font-weight: 800; line-height: 1; }
+        #gear-val { font-size: 14px; color: #ccc; font-weight: bold; }
+
+        /* ZONA INFERIOR (CONTROLES) */
+        .controls-area {
+            position: relative; height: 200px; width: 100%; pointer-events: none;
+        }
+
+        /* PEDALES */
+        .pedal {
+            position: absolute; bottom: 20px; width: 80px; height: 140px;
+            background: linear-gradient(to bottom, #444, #111);
+            border: 2px solid #666; border-radius: 8px;
+            display: flex; justify-content: center; align-items: flex-end;
+            padding-bottom: 10px; font-weight: bold; color: #888; font-size: 14px;
+            pointer-events: auto; cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .pedal.pressed { transform: scale(0.95) translateY(5px); color: #fff; border-color: #fff; }
+        
+        #gas-pedal { right: 20px; border-bottom: 6px solid #0f0; }
+        #gas-pedal.pressed { background: #050; box-shadow: 0 0 20px #0f0; }
+        
+        #brake-pedal { right: 120px; height: 100px; border-bottom: 6px solid #f00; bottom: 20px; }
+        #brake-pedal.pressed { background: #500; box-shadow: 0 0 20px #f00; }
+
+        /* VOLANTE DESLIZANTE */
+        #steering-zone {
+            position: absolute; bottom: 30px; left: 30px;
+            width: 250px; height: 70px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 35px;
+            pointer-events: auto; cursor: grab;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #steer-knob {
+            width: 50px; height: 50px; background: #00ccff; border-radius: 50%;
+            box-shadow: 0 0 10px #00ccff; position: relative;
+        }
+        .arrow-vis { position: absolute; font-size: 20px; opacity: 0.5; color: white; top: 22px; }
+        .left-arrow { left: 10px; } .right-arrow { right: 10px; }
+
+        /* MENÚ DE CONFIGURACIÓN (MODAL) */
+        #modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 999;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .modal-box {
+            background: #2a2a2a; padding: 30px; border-radius: 12px;
+            text-align: center; color: white; width: 300px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+        .modal-btn {
+            display: block; width: 100%; padding: 12px; margin-top: 10px;
+            background: #444; border: none; color: white; border-radius: 6px;
+            font-size: 16px; cursor: pointer;
+        }
+        .modal-btn.active { background: #00ccff; color: #000; font-weight: bold; }
+        .modal-btn.play { background: #e60000; font-weight: bold; margin-top: 20px; }
+
+        /* UTILIDADES */
+        .hidden { display: none !important; }
+        .touch-hidden { opacity: 0; pointer-events: none; } /* Para ocultar controles si hay teclado */
+        #input-notify {
+            position: absolute; top: 80px; left: 20px;
+            background: white; color: black; padding: 5px 10px;
+            border-radius: 4px; font-weight: bold; opacity: 0; transition: opacity 0.5s;
+        }
     </style>
 </head>
 <body>
 
-    <div id="ui-layer" class="mode-slide">
-        <div id="speed-box"><div id="speed-val">0</div><div id="gear-val">KM/H</div></div>
-        <div id="input-notify">🎮 Dispositivo detectado</div>
-        <button id="settings-btn" class="top-btn">⚙️</button>
-        <button id="camera-btn" class="top-btn">🎥</button>
-        <button id="reset-btn" class="top-btn">🔄</button>
-        <button id="lookback-btn" class="top-btn">👁️</button>
-        <button id="calibrate-btn" class="top-btn hidden">🎯</button>
-        <div id="steering-zone" class="touch-control"><div id="steer-indicator"></div><div class="arrow-vis">⬅️</div><div class="arrow-vis">➡️</div></div>
-        <div id="brake-pedal" class="pedal touch-control">FRENO</div>
-        <div id="gas-pedal" class="pedal touch-control">GAS</div>
-    </div>
+    <!-- INTERFAZ DE USUARIO -->
+    <div id="ui-layer">
+        <div class="top-bar">
+            <button id="btn-settings" class="icon-btn">⚙️</button>
+            <button id="btn-camera" class="icon-btn">🎥</button>
+            <button id="btn-reset" class="icon-btn">🔄</button>
+            <button id="btn-lookback" class="icon-btn" style="background:rgba(255,165,0,0.4)">👁️</button>
+        </div>
 
-    <div id="modal">
-        <div class="modal-content">
-            <h2>Configuración</h2>
-            <button id="opt-slide" class="option-btn active-opt">DESLIZAR</button>
-            <button id="opt-gyro" class="option-btn">GIROSCOPIO</button>
-            <button id="close-btn" class="option-btn play-btn">JUGAR</button>
+        <div id="speed-box">
+            <div id="speed-val">0</div>
+            <div id="gear-val">KM/H</div>
+        </div>
+        
+        <div id="input-notify">🎮 Mando Detectado</div>
+
+        <div class="controls-area" id="touch-controls">
+            <div id="steering-zone">
+                <span class="arrow-vis left-arrow">◀</span>
+                <div id="steer-knob"></div>
+                <span class="arrow-vis right-arrow">▶</span>
+            </div>
+            
+            <div id="brake-pedal" class="pedal">FRENO</div>
+            <div id="gas-pedal" class="pedal">GAS</div>
         </div>
     </div>
 
+    <!-- MENÚ MODAL -->
+    <div id="modal-overlay">
+        <div class="modal-box">
+            <h2>CONFIGURACIÓN</h2>
+            <p>Modo de Control:</p>
+            <button id="opt-slide" class="modal-btn active">DESLIZAR PANTALLA</button>
+            <button id="opt-gyro" class="modal-btn">GIROSCOPIO (Móvil)</button>
+            <button id="btn-close-modal" class="modal-btn play">VOLVER AL JUEGO</button>
+        </div>
+    </div>
+
+    <!-- LÓGICA DEL JUEGO -->
     <script type="module">
         import * as THREE from 'three';
         import * as CANNON from 'cannon-es';
         import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
         // ==========================================
-        //  CONFIGURACIÓN GENERAL
+        //  // --- CONFIGURACIÓN DE TAMAÑO --- //
         // ==========================================
-        const AJUSTE_ESCALA = 0.01; 
+        // CAMBIA ESTE NÚMERO SI EL COCHE SE VE MAL
+        // 0.01 = Para modelos en centímetros (muy común en FBX)
+        // 1.0  = Para modelos en metros
+        // 0.1  = Intermedio
+        const SCALE_FACTOR = 0.01; 
         
-        // Chasis
-        const CHASIS_ROT_Y = Math.PI; 
-        const CHASIS_OFFSET_Y = -0.5;
+        // CONFIGURACIÓN RUEDAS
+        const REAR_WHEEL_SCALE = 1.3; // Ruedas traseras 30% más grandes
+        const WHEEL_ROTATION_X = 0;   // Ajustar si la rueda sale acostada (prueba Math.PI/2)
 
-        // Rueda
-        const RUEDA_ROT_FIX_X = 0; 
-
-        // CONFIGURACIÓN RUEDAS TRASERAS
-        const ESCALA_TRASERA = 1.3; // 1.3 = Las ruedas traseras son 30% más grandes
+        // CONFIGURACIÓN CHASIS
+        const CHASSIS_ROT_Y = Math.PI; // Rotar 180 grados si mira atrás
+        const CHASSIS_OFFSET_Y = -0.5; // Subir o bajar la carrocería visualmente
 
         // ==========================================
 
-        let steeringWheelMesh = null;
-        const controls = { gasTouch:0, gasKey:0, gasPad:0, brakeTouch:0, brakeKey:0, brakePad:0, steerTouch:0, steerKey:0, steerMouse:0, steerPad:0, lookBack:false };
-        const state = { controlMode:'slide', cameraMode:'chase', gyroEnabled:false, rawGyro:0, gyroOffset:0 };
+        const controls = { gas:0, brake:0, steer:0, lookBack:false };
+        const inputState = { mode:'slide', cam:'chase', gyro:false, gyroVal:0, gyroOffset:0 };
 
-        const uiLayer = document.getElementById('ui-layer');
-        const modal = document.getElementById('modal');
-        const steerZone = document.getElementById('steering-zone');
-        const steerIndicator = document.getElementById('steer-indicator');
-        const calibrateBtn = document.getElementById('calibrate-btn');
-        const notifyEl = document.getElementById('input-notify');
+        // Elementos DOM
+        const ui = {
+            speed: document.getElementById('speed-val'),
+            steerZone: document.getElementById('steering-zone'),
+            steerKnob: document.getElementById('steer-knob'),
+            gas: document.getElementById('gas-pedal'),
+            brake: document.getElementById('brake-pedal'),
+            touchArea: document.getElementById('touch-controls'),
+            modal: document.getElementById('modal-overlay'),
+            notify: document.getElementById('input-notify')
+        };
 
-        let notifyTimer;
-        function showNotification(text, icon = "") { notifyEl.innerHTML = `${icon} ${text}`; notifyEl.style.opacity = 1; clearTimeout(notifyTimer); notifyTimer = setTimeout(() => notifyEl.style.opacity = 0, 3000); }
-        function setTouchVisibility(visible) { if (visible) { if (uiLayer.classList.contains('ui-hidden')) uiLayer.classList.remove('ui-hidden'); } else { if (!uiLayer.classList.contains('ui-hidden')) uiLayer.classList.add('ui-hidden'); } }
-
-        window.addEventListener("gamepadconnected", (e) => { showNotification(`Mando Conectado`, "🎮"); setTouchVisibility(false); });
-        function pollGamepads() {
-            const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-            if (!gamepads[0]) return;
-            const gp = gamepads[0];
-            const active = Math.abs(gp.axes[0]) > 0.1 || gp.buttons.some(b => b.pressed);
-            if (active) setTouchVisibility(false);
-            controls.steerPad = (Math.abs(gp.axes[0]) > 0.1) ? -gp.axes[0] : 0;
-            const btnGas = gp.buttons[7]; if (btnGas && typeof btnGas === 'object' && btnGas.value > 0.1) controls.gasPad = btnGas.value; else if (gp.buttons[0].pressed) controls.gasPad = 1; else controls.gasPad = 0;
-            const btnBrake = gp.buttons[6]; if (btnBrake && typeof btnBrake === 'object' && btnBrake.value > 0.1) controls.brakePad = btnBrake.value; else if (gp.buttons[1].pressed || gp.buttons[2].pressed) controls.brakePad = 1; else controls.brakePad = 0;
-            controls.lookBack = gp.buttons[4]?.pressed || false; 
-            if (gp.buttons[3].pressed) toggleCameraDebounce(); 
-            if (gp.buttons[8].pressed || gp.buttons[9].pressed) resetCar();
+        // --- SISTEMA DE INPUT (TECLADO / MOUSE / TÁCTIL / GAMEPAD) ---
+        
+        // Notificaciones
+        let notifTimeout;
+        function notify(msg) {
+            ui.notify.innerText = msg; ui.notify.style.opacity = 1;
+            clearTimeout(notifTimeout); notifTimeout = setTimeout(()=>ui.notify.style.opacity=0, 3000);
         }
+        function toggleTouchUI(show) { ui.touchArea.style.opacity = show ? 1 : 0; ui.touchArea.style.pointerEvents = show ? 'auto' : 'none'; }
 
-        let lastCamToggle = 0;
-        function toggleCameraDebounce() { if (Date.now() - lastCamToggle > 500) { state.cameraMode = (state.cameraMode === 'chase') ? 'cockpit' : 'chase'; lastCamToggle = Date.now(); } }
+        // Botones UI
+        document.getElementById('btn-settings').onclick = () => ui.modal.classList.remove('hidden');
+        document.getElementById('btn-close-modal').onclick = () => ui.modal.classList.add('hidden');
+        document.getElementById('btn-camera').onclick = () => inputState.cam = (inputState.cam==='chase')?'cockpit':'chase';
+        document.getElementById('btn-reset').onclick = resetCar;
+        const btnLook = document.getElementById('btn-lookback');
+        
+        // Eventos Mirar Atrás
+        const setLook = (v) => controls.lookBack = v;
+        btnLook.onmousedown = () => setLook(true); btnLook.onmouseup = () => setLook(false);
+        btnLook.ontouchstart = (e) => { e.preventDefault(); setLook(true); }; btnLook.ontouchend = () => setLook(false);
 
+        // Configuración Modal
+        document.getElementById('opt-slide').onclick = function() { inputState.mode='slide'; this.classList.add('active'); document.getElementById('opt-gyro').classList.remove('active'); };
+        document.getElementById('opt-gyro').onclick = function() { inputState.mode='gyro'; this.classList.add('active'); document.getElementById('opt-slide').classList.remove('active'); requestGyro(); };
+
+        // --- TECLADO (PC) ---
         window.addEventListener('keydown', (e) => {
             const k = e.key.toLowerCase();
-            if(['w','a','s','d','arrowup','arrowdown',' '].includes(k)) { showNotification("Teclado", "⌨️"); setTouchVisibility(false); }
-            if(k==='w'||k==='arrowup') { controls.gasKey=1; document.getElementById('gas-pedal').classList.add('pressed'); }
-            if(k==='s'||k==='arrowdown') { controls.brakeKey=1; document.getElementById('brake-pedal').classList.add('pressed'); }
-            if(k==='a'||k==='arrowleft') controls.steerKey=1; if(k==='d'||k==='arrowright') controls.steerKey=-1;
-            if(k==='c') state.cameraMode = (state.cameraMode==='chase')?'cockpit':'chase';
-            if(k==='r') resetCar(); if(k==='b') controls.lookBack=true;
+            if(['w','a','s','d','arrowup','arrowdown'].includes(k)) toggleTouchUI(false);
+            if(k==='w'||k==='arrowup') { controls.gas=1; ui.gas.classList.add('pressed'); }
+            if(k==='s'||k==='arrowdown') { controls.brake=1; ui.brake.classList.add('pressed'); }
+            if(k==='a'||k==='arrowleft') controls.steer=1; 
+            if(k==='d'||k==='arrowright') controls.steer=-1;
+            if(k==='b') controls.lookBack=true;
+            if(k==='c') document.getElementById('btn-camera').click();
+            if(k==='r') resetCar();
         });
         window.addEventListener('keyup', (e) => {
             const k = e.key.toLowerCase();
-            if(k==='w'||k==='arrowup') { controls.gasKey=0; document.getElementById('gas-pedal').classList.remove('pressed'); }
-            if(k==='s'||k==='arrowdown') { controls.brakeKey=0; document.getElementById('brake-pedal').classList.remove('pressed'); }
-            if(k==='a'||k==='arrowleft'||k==='d'||k==='arrowright') controls.steerKey=0;
+            if(k==='w'||k==='arrowup') { controls.gas=0; ui.gas.classList.remove('pressed'); }
+            if(k==='s'||k==='arrowdown') { controls.brake=0; ui.brake.classList.remove('pressed'); }
+            if(k==='a'||k==='arrowleft'||k==='d'||k==='arrowright') controls.steer=0;
             if(k==='b') controls.lookBack=false;
         });
 
-        let zoneRect = steerZone.getBoundingClientRect();
-        function calcSteerFromX(clientX) { return -Math.max(-1, Math.min(1, (clientX - (zoneRect.left + zoneRect.width/2)) / (zoneRect.width/2))); }
-        function updateSteerVisual(val) { steerIndicator.style.transform = `translateX(calc(-50% + ${-val*(zoneRect.width/2)}px))`; }
-        steerZone.addEventListener('touchstart', (e)=>{ e.preventDefault(); controls.steerTouch=calcSteerFromX(e.touches[0].clientX); updateSteerVisual(controls.steerTouch); }, {passive:false});
-        steerZone.addEventListener('touchmove', (e)=>{ e.preventDefault(); controls.steerTouch=calcSteerFromX(e.touches[0].clientX); updateSteerVisual(controls.steerTouch); }, {passive:false});
-        steerZone.addEventListener('touchend', (e)=>{ e.preventDefault(); controls.steerTouch=0; updateSteerVisual(0); }, {passive:false});
-        const bindP = (id, prop) => { const el = document.getElementById(id); const s = (v) => { controls[prop]=v; v?el.classList.add('pressed'):el.classList.remove('pressed'); }; el.addEventListener('touchstart', (e)=>{ e.preventDefault(); s(1); }, {passive:false}); el.addEventListener('touchend', (e)=>{ e.preventDefault(); s(0); }, {passive:false}); };
-        bindP('gas-pedal', 'gasTouch'); bindP('brake-pedal', 'brakeTouch');
-        const btnLook = document.getElementById('lookback-btn');
-        btnLook.addEventListener('touchstart', (e)=>{ e.preventDefault(); controls.lookBack=true; }); btnLook.addEventListener('touchend', (e)=>{ e.preventDefault(); controls.lookBack=false; }); btnLook.addEventListener('mousedown', ()=>controls.lookBack=true); btnLook.addEventListener('mouseup', ()=>controls.lookBack=false);
+        // --- PEDALES (MOUSE & TÁCTIL) ---
+        function bindPedal(el, param) {
+            const start = (e) => { e.preventDefault(); controls[param]=1; el.classList.add('pressed'); toggleTouchUI(true); };
+            const end = (e) => { e.preventDefault(); controls[param]=0; el.classList.remove('pressed'); };
+            el.addEventListener('mousedown', start); el.addEventListener('mouseup', end); el.addEventListener('mouseleave', end);
+            el.addEventListener('touchstart', start); el.addEventListener('touchend', end);
+        }
+        bindPedal(ui.gas, 'gas');
+        bindPedal(ui.brake, 'brake');
 
-        document.getElementById('settings-btn').addEventListener('click', () => modal.classList.remove('modal-hidden'));
-        document.getElementById('close-btn').addEventListener('click', () => { modal.classList.add('modal-hidden'); calibrateGyro(); });
-        document.getElementById('opt-slide').addEventListener('click', () => { state.controlMode='slide'; uiLayer.className='mode-slide'; });
-        document.getElementById('opt-gyro').addEventListener('click', () => { state.controlMode='gyro'; uiLayer.className='mode-gyro'; enableGyro(); });
-        document.getElementById('camera-btn').addEventListener('click', () => state.cameraMode=(state.cameraMode==='chase')?'cockpit':'chase');
-        document.getElementById('reset-btn').addEventListener('click', resetCar);
-        document.getElementById('calibrate-btn').addEventListener('click', calibrateGyro);
+        // --- VOLANTE DESLIZANTE (MOUSE & TÁCTIL) ---
+        let isSteering = false;
+        const steerRect = ui.steerZone.getBoundingClientRect();
+        const centerX = steerRect.left + steerRect.width/2;
+        
+        function handleSteer(clientX) {
+            let delta = clientX - centerX;
+            let val = Math.max(-1, Math.min(1, delta / (steerRect.width/2)));
+            controls.steer = -val; // Invertido para Three.js
+            // Mover el botón visualmente
+            ui.steerKnob.style.transform = `translateX(${val * 40}px)`;
+        }
 
-        function resetCar() { if(chassisBody){ chassisBody.position.set(0,3,0); chassisBody.quaternion.set(0,0,0,1); chassisBody.velocity.set(0,0,0); chassisBody.angularVelocity.set(0,0,0); } }
-        function calibrateGyro() { if(state.controlMode==='gyro') state.gyroOffset=state.rawGyro; }
-        function enableGyro() { if(!state.gyroEnabled && typeof DeviceOrientationEvent?.requestPermission==='function') DeviceOrientationEvent.requestPermission().then(r=>{if(r==='granted')state.gyroEnabled=true;}); else state.gyroEnabled=true; }
-        window.addEventListener('deviceorientation', (e)=>{ const land = window.innerWidth>window.innerHeight; if(land && e.beta!==null) state.rawGyro=e.beta; else if(e.gamma!==null) state.rawGyro=e.gamma; });
-        window.addEventListener('resize', () => { zoneRect=steerZone.getBoundingClientRect(); renderer.setSize(window.innerWidth, window.innerHeight); camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); });
+        ui.steerZone.addEventListener('mousedown', (e) => { isSteering=true; handleSteer(e.clientX); });
+        window.addEventListener('mousemove', (e) => { if(isSteering) handleSteer(e.clientX); });
+        window.addEventListener('mouseup', () => { isSteering=false; controls.steer=0; ui.steerKnob.style.transform='translateX(0)'; });
 
-        const scene = new THREE.Scene(); scene.background = new THREE.Color(0x222); scene.fog = new THREE.Fog(0x222, 20, 150);
-        const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.01, 500);
+        ui.steerZone.addEventListener('touchstart', (e) => { e.preventDefault(); handleSteer(e.touches[0].clientX); });
+        ui.steerZone.addEventListener('touchmove', (e) => { e.preventDefault(); handleSteer(e.touches[0].clientX); });
+        ui.steerZone.addEventListener('touchend', (e) => { e.preventDefault(); controls.steer=0; ui.steerKnob.style.transform='translateX(0)'; });
+
+        // --- GAMEPAD ---
+        window.addEventListener("gamepadconnected", () => { notify("🎮 Mando Conectado"); toggleTouchUI(false); });
+        function updateGamepad() {
+            const gp = navigator.getGamepads ? navigator.getGamepads()[0] : null;
+            if(!gp) return;
+            
+            // Steering
+            if(Math.abs(gp.axes[0]) > 0.1) controls.steer = -gp.axes[0];
+            
+            // Gas (R2 o A)
+            if(gp.buttons[7] && gp.buttons[7].value > 0) controls.gas = gp.buttons[7].value;
+            else controls.gas = gp.buttons[0].pressed ? 1 : 0;
+
+            // Brake (L2 o B)
+            if(gp.buttons[6] && gp.buttons[6].value > 0) controls.brake = gp.buttons[6].value;
+            else controls.brake = gp.buttons[1].pressed ? 1 : 0;
+
+            controls.lookBack = gp.buttons[4].pressed; // L1
+        }
+
+        // --- GIROSCOPIO ---
+        function requestGyro() {
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission().then(r => { if(r==='granted') inputState.gyro=true; });
+            } else { inputState.gyro=true; }
+        }
+        window.addEventListener('deviceorientation', (e) => {
+            if(!inputState.gyro) return;
+            // Detectar orientación (horizontal)
+            const val = (window.innerWidth > window.innerHeight) ? e.beta : e.gamma;
+            if(val!==null) inputState.gyroVal = val;
+        });
+
+
+        // ==========================================
+        //  ESCENA 3D Y FÍSICAS
+        // ==========================================
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x222222);
+        scene.fog = new THREE.Fog(0x222222, 10, 200);
+
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.05, 500);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight); renderer.shadowMap.enabled = true;
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
-        const world = new CANNON.World(); world.gravity.set(0, -9.82, 0); world.broadphase = new CANNON.SAPBroadphase(world);
-        const sun = new THREE.DirectionalLight(0xffffff, 2.0); sun.position.set(50, 100, 50); sun.castShadow = true; scene.add(sun); scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-        const groundMat = new CANNON.Material('ground'); const wheelMat = new CANNON.Material('wheel');
-        world.addContactMaterial(new CANNON.ContactMaterial(wheelMat, groundMat, { friction: 2.5, restitution: 0 }));
-        const gb = new CANNON.Body({ mass: 0, material: groundMat }); gb.addShape(new CANNON.Plane()); gb.quaternion.setFromEuler(-Math.PI/2, 0, 0); world.addBody(gb);
+
+        const world = new CANNON.World();
+        world.gravity.set(0, -9.82, 0);
+        world.broadphase = new CANNON.SAPBroadphase(world);
+
+        // Luces
+        const sun = new THREE.DirectionalLight(0xffffff, 2);
+        sun.position.set(50, 100, 50); sun.castShadow = true; scene.add(sun);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+
+        // Suelo
+        const groundMat = new CANNON.Material('ground');
+        const wheelMat = new CANNON.Material('wheel');
+        world.addContactMaterial(new CANNON.ContactMaterial(wheelMat, groundMat, { friction: 3, restitution: 0 }));
+        
+        const gb = new CANNON.Body({ mass: 0, material: groundMat });
+        gb.addShape(new CANNON.Plane()); gb.quaternion.setFromEuler(-Math.PI/2, 0, 0); world.addBody(gb);
+        
         const grid = new THREE.GridHelper(500, 100, 0x444444, 0x222222); scene.add(grid);
 
-        // ==========================================
-        //  CARGA FBX SEPARADOS + ESCALADO
-        // ==========================================
+        // --- CARGA DE MODELOS ---
         const fbxLoader = new FBXLoader();
-        
-        // 1. CHASIS
         const chassisGroup = new THREE.Group();
-        fbxLoader.load('./models/chasis.fbx', (object) => {
-            object.scale.set(AJUSTE_ESCALA, AJUSTE_ESCALA, AJUSTE_ESCALA);
-            object.rotation.y = CHASIS_ROT_Y; 
-            object.position.y = CHASIS_OFFSET_Y;
-            object.traverse(child => { if(child.isMesh) { child.castShadow=true; child.receiveShadow=true; } });
-            chassisGroup.add(object);
-        }, undefined, (e) => console.error("Error Chasis:", e));
+        const wheelVisuals = [];
+
+        // 1. CARGAR CHASIS
+        fbxLoader.load('./models/chasis.fbx', (obj) => {
+            obj.scale.set(SCALE_FACTOR, SCALE_FACTOR, SCALE_FACTOR);
+            obj.rotation.y = CHASSIS_ROT_Y;
+            obj.position.y = CHASSIS_OFFSET_Y;
+            obj.traverse(c => { if(c.isMesh) { c.castShadow=true; c.receiveShadow=true; } });
+            chassisGroup.add(obj);
+        }, undefined, (e)=>console.error("Error Chasis:", e));
         scene.add(chassisGroup);
 
-        // 2. RUEDAS (Con escalado trasero)
-        const wheelVisuals = [];
-        fbxLoader.load('./models/rueda.fbx', (object) => {
-            object.traverse(child => { if(child.isMesh) { child.castShadow=true; child.receiveShadow=true; } });
-            
-            // Corrección rotación
-            object.rotation.x = RUEDA_ROT_FIX_X;
+        // 2. CARGAR RUEDAS
+        fbxLoader.load('./models/rueda.fbx', (obj) => {
+            obj.traverse(c => { if(c.isMesh) { c.castShadow=true; c.receiveShadow=true; } });
+            obj.rotation.x = WHEEL_ROTATION_X;
 
             for(let i=0; i<4; i++) {
-                const wheelClone = object.clone();
-                
-                // ESCALADO: Si es rueda trasera (indice 2 y 3), aplicar escala extra
-                let currentScale = AJUSTE_ESCALA;
-                if(i >= 2) {
-                    currentScale = AJUSTE_ESCALA * ESCALA_TRASERA;
-                }
-                wheelClone.scale.set(currentScale, currentScale, currentScale);
-
-                scene.add(wheelClone);
-                wheelVisuals.push(wheelClone);
+                const w = obj.clone();
+                // Escalar ruedas traseras (índice 2 y 3)
+                const s = (i>=2) ? SCALE_FACTOR * REAR_WHEEL_SCALE : SCALE_FACTOR;
+                w.scale.set(s,s,s);
+                scene.add(w);
+                wheelVisuals.push(w);
             }
-        }, undefined, (e) => console.error("Error Rueda:", e));
+        }, undefined, (e)=>console.error("Error Rueda:", e));
 
-        // FÍSICAS
+
+        // --- VEHÍCULO FÍSICO ---
         const chassisBody = new CANNON.Body({ mass: 150, material: groundMat });
-        chassisBody.addShape(new CANNON.Box(new CANNON.Vec3(0.7, 0.2, 2.0)), new CANNON.Vec3(0, 0.3, 0)); 
-        chassisBody.position.set(0, 2, 0); chassisBody.angularDamping = 0.5;
+        chassisBody.addShape(new CANNON.Box(new CANNON.Vec3(0.7, 0.25, 2.0)), new CANNON.Vec3(0, 0.4, 0));
+        chassisBody.position.set(0, 3, 0);
+        chassisBody.angularDamping = 0.5;
 
-        const vehicle = new CANNON.RaycastVehicle({ chassisBody: chassisBody, indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2 });
-        
-        // Definir opciones para ruedas DELANTERAS
-        const wOptsFront = {
-            radius: 0.38, // Radio físico estándar
-            directionLocal: new CANNON.Vec3(0,-1,0), suspensionStiffness: 45, suspensionRestLength: 0.45, frictionSlip: 4, 
-            dampingRelaxation: 5.5, dampingCompression: 4.5, maxSuspensionForce: 100000, axleLocal: new CANNON.Vec3(-1,0,0), 
-            chassisConnectionPointLocal: new CANNON.Vec3(0,0,0), maxSuspensionTravel: 0.2, useCustomSlidingRotationalSpeed: true, customSlidingRotationalSpeed: -30
+        const vehicle = new CANNON.RaycastVehicle({
+            chassisBody: chassisBody, indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2
+        });
+
+        const wOpts = {
+            radius: 0.38, directionLocal: new CANNON.Vec3(0,-1,0), suspensionStiffness: 45, 
+            suspensionRestLength: 0.45, frictionSlip: 4, dampingRelaxation: 5.5, 
+            dampingCompression: 4.5, maxSuspensionForce: 100000, axleLocal: new CANNON.Vec3(-1,0,0), 
+            chassisConnectionPointLocal: new CANNON.Vec3(0,0,0), maxSuspensionTravel: 0.2, 
+            useCustomSlidingRotationalSpeed: true, customSlidingRotationalSpeed: -30
         };
 
-        // Definir opciones para ruedas TRASERAS (Radio mayor)
-        const wOptsRear = { ...wOptsFront }; // Copiar configuración
-        wOptsRear.radius = 0.38 * ESCALA_TRASERA; // Aumentar radio físico
+        // Ruedas Delanteras
+        wOpts.chassisConnectionPointLocal.set(1.1, 0.2, 1.6); vehicle.addWheel(wOpts);
+        wOpts.chassisConnectionPointLocal.set(-1.1, 0.2, 1.6); vehicle.addWheel(wOpts);
+        
+        // Ruedas Traseras (Radio Físico Mayor)
+        const wOptsRear = { ...wOpts };
+        wOptsRear.radius = 0.38 * REAR_WHEEL_SCALE;
+        wOptsRear.chassisConnectionPointLocal.set(1.1, 0.2, -1.6); vehicle.addWheel(wOptsRear);
+        wOptsRear.chassisConnectionPointLocal.set(-1.1, 0.2, -1.6); vehicle.addWheel(wOptsRear);
 
-        // Añadir DELANTERAS
-        wOptsFront.chassisConnectionPointLocal.set(1.1, 0.1, 1.6); vehicle.addWheel(wOptsFront);
-        wOptsFront.chassisConnectionPointLocal.set(-1.1, 0.1, 1.6); vehicle.addWheel(wOptsFront);
-        
-        // Añadir TRASERAS
-        wOptsRear.chassisConnectionPointLocal.set(1.1, 0.1, -1.6); vehicle.addWheel(wOptsRear);
-        wOptsRear.chassisConnectionPointLocal.set(-1.1, 0.1, -1.6); vehicle.addWheel(wOptsRear);
-        
         vehicle.addToWorld(world);
 
+        // Reset
+        function resetCar() {
+            chassisBody.position.set(0, 3, 0); chassisBody.quaternion.set(0,0,0,1);
+            chassisBody.velocity.set(0,0,0); chassisBody.angularVelocity.set(0,0,0);
+        }
+
+        // --- BUCLE PRINCIPAL ---
         const dummy = new THREE.Object3D();
+        
         function animate() {
             requestAnimationFrame(animate);
-            pollGamepads();
-            const gas = Math.max(controls.gasKey, controls.gasTouch, controls.gasPad);
-            const brake = Math.max(controls.brakeKey, controls.brakeTouch, controls.brakePad);
-            let steer = 0;
-            if (Math.abs(controls.steerPad) > 0.05) steer = controls.steerPad * 0.75;
-            else if (controls.steerKey !== 0) steer = controls.steerKey * 0.75;
-            else if (state.controlMode === 'slide') steer = (controls.steerTouch || controls.steerMouse) * 0.75;
-            else if (state.controlMode === 'gyro' && state.gyroEnabled) steer = -(Math.max(-35, Math.min(35, state.rawGyro - state.gyroOffset)) / 35) * 0.75;
+            updateGamepad();
 
+            // Lógica de Giroscopio
+            if(inputState.mode==='gyro' && inputState.gyro) {
+                // Mapear inclinación (-30 a 30 grados) a dirección (-1 a 1)
+                const val = Math.max(-30, Math.min(30, inputState.gyroVal));
+                controls.steer = -(val / 30);
+            }
+
+            // Aplicar Inputs
             const speed = chassisBody.velocity.length();
-            if(speed > 5) chassisBody.applyLocalForce(new CANNON.Vec3(0, -speed * 180, 0), new CANNON.Vec3(0, 0, 0));
-            const engineForce = 3000; 
-            vehicle.applyEngineForce(-gas * engineForce, 2); vehicle.applyEngineForce(-gas * engineForce, 3);
-            const bForce = 150;
-            vehicle.setBrake(brake * bForce * 0.5, 0); vehicle.setBrake(brake * bForce * 0.5, 1);
-            vehicle.setBrake(brake * bForce, 2); vehicle.setBrake(brake * bForce, 3);
-            vehicle.setSteeringValue(steer, 0); vehicle.setSteeringValue(steer, 1);
+            
+            // Fuerza Motor
+            const engineForce = 3000;
+            vehicle.applyEngineForce(-controls.gas * engineForce, 2);
+            vehicle.applyEngineForce(-controls.gas * engineForce, 3);
+            
+            // Frenos
+            const brakeForce = 150;
+            vehicle.setBrake(controls.brake * brakeForce * 0.5, 0);
+            vehicle.setBrake(controls.brake * brakeForce * 0.5, 1);
+            vehicle.setBrake(controls.brake * brakeForce, 2);
+            vehicle.setBrake(controls.brake * brakeForce, 3);
+            
+            // Dirección
+            const steerVal = controls.steer * 0.7; // Max 0.7 rads
+            vehicle.setSteeringValue(steerVal, 0);
+            vehicle.setSteeringValue(steerVal, 1);
+
+            // Aerodinámica simple
+            if(speed > 10) chassisBody.applyLocalForce(new CANNON.Vec3(0, -speed * 150, 0), new CANNON.Vec3(0,0,0));
+
             world.fixedStep();
 
+            // Sincronizar gráficos
             chassisGroup.position.copy(chassisBody.position);
             chassisGroup.quaternion.copy(chassisBody.quaternion);
-            
+
             for(let i=0; i<4; i++){
                 vehicle.updateWheelTransform(i);
                 if(wheelVisuals[i]) {
@@ -276,22 +459,33 @@
                 }
             }
 
-            if (state.cameraMode === 'chase') {
-                const target = controls.lookBack ? new THREE.Vector3(0, 2.5, 6.0) : new THREE.Vector3(0, 2.8, -6.5);
-                const pos = target.applyMatrix4(chassisGroup.matrixWorld);
-                camera.position.lerp(pos, 0.1);
-                camera.lookAt(chassisGroup.position.x, chassisGroup.position.y + 0.6, chassisGroup.position.z);
+            // Cámara
+            if(inputState.cam === 'chase') {
+                const offset = controls.lookBack ? new THREE.Vector3(0, 3, 7) : new THREE.Vector3(0, 3, -6);
+                const target = offset.applyMatrix4(chassisGroup.matrixWorld);
+                camera.position.lerp(target, 0.1);
+                camera.lookAt(chassisGroup.position.x, chassisGroup.position.y+1, chassisGroup.position.z);
             } else {
+                // Cockpit
                 const offset = new THREE.Vector3(0, 0.8, 0.3).applyMatrix4(chassisGroup.matrixWorld);
                 camera.position.copy(offset);
                 dummy.quaternion.copy(chassisGroup.quaternion);
-                if (!controls.lookBack) dummy.rotateY(Math.PI);
-                camera.quaternion.slerp(dummy.quaternion, 0.25);
+                if(!controls.lookBack) dummy.rotateY(Math.PI);
+                camera.quaternion.slerp(dummy.quaternion, 0.2);
             }
-            document.getElementById('speed-val').innerText = Math.floor(speed*3.6);
+
+            // UI Updates
+            ui.speed.innerText = Math.floor(speed * 3.6);
             renderer.render(scene, camera);
         }
         animate();
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth/window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+
     </script>
 </body>
 </html>
