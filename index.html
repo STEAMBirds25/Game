@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F1: Final Fixed Physics & Scale</title>
+    <title>F1: Calibration Fix</title>
 
     <script type="importmap">
         {
@@ -81,24 +81,29 @@
         import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
         // ========================================================
-        //  CONFIGURACIÓN CRÍTICA (AJUSTAR AQUÍ)
+        //  ZONA DE CALIBRACIÓN (MODIFICA ESTOS NÚMEROS)
         // ========================================================
         
-        // 1. TAMAÑO: Si usas 2.0, las físicas se ajustarán automáticamente a 2.0
         const SCALE_FACTOR = 2.0; 
 
-        // 2. ROTACIÓN DEL CHASIS (Para arreglar si sale al revés)
-        // Usa Math.PI (180 grados), Math.PI/2 (90 grados) o 0
-        const MODEL_ROT_X = 0;          // Girar sobre eje rojo (adelante/atrás)
-        const MODEL_ROT_Y = Math.PI;    // Girar sobre eje verde (izquierda/derecha)
-        const MODEL_ROT_Z = 0;          // Girar sobre eje azul (costado)
+        // 1. SEPARACIÓN (Ancho): Si están juntas, aumenta esto (ej. 1.5, 1.8)
+        const SEPARACION_ANCHO = 1.6; 
 
-        // 3. POSICIÓN VISUAL (Subir/Bajar chasis)
-        const CHASSIS_OFFSET_Y = -0.5 * SCALE_FACTOR;
+        // 2. ALTURA (Y): Si están muy arriba, pon negativo (ej. -0.2). Si muy abajo, positivo.
+        const ALTURA_SUSPENSION = -0.3; 
 
-        // 4. RUEDAS
-        const REAR_WHEEL_SCALE = 1.3; // Traseras más grandes
-        const WHEEL_ROTATION_X = 0;   // Ajustar si la rueda sale acostada
+        // 3. LARGO (Z): Separación entre ruedas delanteras y traseras
+        const SEPARACION_LARGO = 1.0; 
+
+        // 4. OTROS AJUSTES
+        const REAR_WHEEL_SCALE = 1.3; 
+        const WHEEL_ROTATION_X = 0;   
+        const CHASSIS_ROT_Y = Math.PI; // Rotar 180 (Mirar frente)
+        const CHASSIS_ROT_X = 0; // Rotar boca arriba/abajo
+        const CHASSIS_ROT_Z = 0; 
+        
+        // Ajuste visual del chasis respecto a las ruedas físicas
+        const VISUAL_OFFSET_Y = -0.8; 
 
         // ========================================================
 
@@ -118,44 +123,39 @@
             btnGyro: document.getElementById('opt-gyro')
         };
 
-        // --- SISTEMA DE CONFIGURACIÓN (ARREGLADO) ---
+        // --- MODO DE CONTROL (ARREGLADO) ---
         function setInputMode(mode) {
             inputState.mode = mode;
             if (mode === 'slide') {
                 ui.btnSlide.classList.add('active'); ui.btnGyro.classList.remove('active');
-                ui.steerZone.classList.remove('hidden'); // MOSTRAR SLIDER
-                ui.btnCalibrate.classList.add('hidden'); // OCULTAR CALIBRAR
-                controls.steer = 0; // Resetear dirección
+                ui.steerZone.classList.remove('hidden'); 
+                ui.btnCalibrate.classList.add('hidden');
             } else {
                 ui.btnGyro.classList.add('active'); ui.btnSlide.classList.remove('active');
-                ui.steerZone.classList.add('hidden');    // OCULTAR SLIDER
-                ui.btnCalibrate.classList.remove('hidden'); // MOSTRAR CALIBRAR
+                ui.steerZone.classList.add('hidden');    
+                ui.btnCalibrate.classList.remove('hidden');
                 requestGyro();
             }
         }
-
         ui.btnSlide.onclick = () => setInputMode('slide');
         ui.btnGyro.onclick = () => setInputMode('gyro');
+
         document.getElementById('btn-settings').onclick = () => ui.modal.classList.remove('hidden');
         document.getElementById('btn-close-modal').onclick = () => ui.modal.classList.add('hidden');
         document.getElementById('btn-camera').onclick = () => inputState.cam = (inputState.cam==='chase')?'cockpit':'chase';
         document.getElementById('btn-reset').onclick = resetCar;
         ui.btnCalibrate.onclick = () => { inputState.gyroOffset = inputState.gyroVal; notify("🎯 Calibrado"); };
-
         function toggleTouchUI(show) { ui.touchArea.classList.toggle('ui-hidden', !show); }
         function notify(msg) { ui.notify.innerText=msg; ui.notify.style.opacity=1; setTimeout(()=>ui.notify.style.opacity=0, 3000); }
 
-        // --- INPUT HANDLERS ---
+        // --- INPUTS ---
         window.addEventListener('keydown', (e) => {
             if(['w','a','s','d','arrowup','arrowdown'].includes(e.key.toLowerCase())) toggleTouchUI(false);
             const k=e.key.toLowerCase();
             if(k==='w'||k==='arrowup') { controls.gas=1; ui.gas.classList.add('pressed'); }
             if(k==='s'||k==='arrowdown') { controls.brake=1; ui.brake.classList.add('pressed'); }
-            if(k==='a'||k==='arrowleft') controls.steer=1; 
-            if(k==='d'||k==='arrowright') controls.steer=-1;
-            if(k==='b') controls.lookBack=true;
-            if(k==='c') document.getElementById('btn-camera').click();
-            if(k==='r') resetCar();
+            if(k==='a'||k==='arrowleft') controls.steer=1; if(k==='d'||k==='arrowright') controls.steer=-1;
+            if(k==='b') controls.lookBack=true; if(k==='c') document.getElementById('btn-camera').click(); if(k==='r') resetCar();
         });
         window.addEventListener('keyup', (e) => {
             const k=e.key.toLowerCase();
@@ -165,7 +165,7 @@
             if(k==='b') controls.lookBack=false;
         });
 
-        // Touch
+        // Touch & Mouse
         function bindBtn(el, param) {
             const s=(e)=>{e.preventDefault(); controls[param]=1; el.classList.add('pressed'); toggleTouchUI(true);};
             const end=(e)=>{e.preventDefault(); controls[param]=0; el.classList.remove('pressed');};
@@ -173,14 +173,13 @@
             el.addEventListener('touchstart', s); el.addEventListener('touchend', end);
         }
         bindBtn(ui.gas, 'gas'); bindBtn(ui.brake, 'brake');
-        document.getElementById('btn-lookback').addEventListener('touchstart', (e)=>{e.preventDefault(); controls.lookBack=true;});
-        document.getElementById('btn-lookback').addEventListener('touchend', ()=>{controls.lookBack=false;});
-        document.getElementById('btn-lookback').addEventListener('mousedown', ()=>{controls.lookBack=true;});
-        document.getElementById('btn-lookback').addEventListener('mouseup', ()=>{controls.lookBack=false;});
+        
+        const btnLook = document.getElementById('btn-lookback');
+        btnLook.addEventListener('mousedown', ()=>controls.lookBack=true); btnLook.addEventListener('mouseup', ()=>controls.lookBack=false);
+        btnLook.addEventListener('touchstart', (e)=>{e.preventDefault(); controls.lookBack=true;}); btnLook.addEventListener('touchend', ()=>controls.lookBack=false);
 
         // Slider
-        let isSteering = false;
-        const steerRect = ui.steerZone.getBoundingClientRect();
+        let isSteering = false; const steerRect = ui.steerZone.getBoundingClientRect();
         function handleSteer(clientX) {
             let delta = clientX - (steerRect.left + steerRect.width/2);
             let val = Math.max(-1, Math.min(1, delta / (steerRect.width/2)));
@@ -196,8 +195,7 @@
         // Gamepad & Gyro
         window.addEventListener("gamepadconnected", ()=> {notify("🎮 Mando"); toggleTouchUI(false);});
         function updateGamepad() {
-            const gp = navigator.getGamepads ? navigator.getGamepads()[0] : null;
-            if(!gp) return;
+            const gp = navigator.getGamepads ? navigator.getGamepads()[0] : null; if(!gp) return;
             if(Math.abs(gp.axes[0]) > 0.1) controls.steer = -gp.axes[0];
             controls.gas = (gp.buttons[7]?.value>0) ? gp.buttons[7].value : (gp.buttons[0].pressed?1:0);
             controls.brake = (gp.buttons[6]?.value>0) ? gp.buttons[6].value : (gp.buttons[1].pressed?1:0);
@@ -215,7 +213,7 @@
         });
 
         // ==========================================
-        //  3D & PHYSICS
+        //  3D SCENE & PHYSICS
         // ==========================================
         const scene = new THREE.Scene(); scene.background = new THREE.Color(0x222222); scene.fog = new THREE.Fog(0x222222, 10, 200);
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.05, 500);
@@ -238,12 +236,11 @@
 
         fbxLoader.load('./models/chasis.fbx', (obj) => {
             obj.scale.set(SCALE_FACTOR, SCALE_FACTOR, SCALE_FACTOR);
-            // AQUÍ APLICAMOS LA ROTACIÓN CORRECTIVA
-            obj.rotation.set(MODEL_ROT_X, MODEL_ROT_Y, MODEL_ROT_Z);
-            obj.position.y = CHASSIS_OFFSET_Y;
+            obj.rotation.set(MODEL_ROT_X, CHASSIS_ROT_Y, CHASSIS_ROT_Z);
+            obj.position.y = VISUAL_OFFSET_Y * SCALE_FACTOR; // Ajuste visual de altura
             obj.traverse(c => { if(c.isMesh) { c.castShadow=true; c.receiveShadow=true; } });
             chassisGroup.add(obj);
-        }, undefined, (e)=>console.error("Error Chasis", e));
+        }, undefined, (e)=>console.error(e));
         scene.add(chassisGroup);
 
         fbxLoader.load('./models/rueda.fbx', (obj) => {
@@ -256,37 +253,37 @@
                 scene.add(w);
                 wheelVisuals.push(w);
             }
-        }, undefined, (e)=>console.error("Error Rueda", e));
+        }, undefined, (e)=>console.error(e));
 
-        // --- FISICAS (AJUSTADAS POR SCALE_FACTOR) ---
+        // --- VEHICLE PHYSICS ---
         const chassisBody = new CANNON.Body({ mass: 150, material: groundMat });
-        // Ajustamos la Hitbox al nuevo tamaño
         chassisBody.addShape(new CANNON.Box(new CANNON.Vec3(0.7*SCALE_FACTOR, 0.25*SCALE_FACTOR, 2.0*SCALE_FACTOR)), new CANNON.Vec3(0, 0.4*SCALE_FACTOR, 0));
         chassisBody.position.set(0, 3, 0); chassisBody.angularDamping = 0.5;
 
         const vehicle = new CANNON.RaycastVehicle({ chassisBody: chassisBody, indexRightAxis: 0, indexUpAxis: 1, indexForwardAxis: 2 });
+        
         const wOpts = { 
             radius: 0.38 * SCALE_FACTOR, 
-            directionLocal: new CANNON.Vec3(0,-1,0), suspensionStiffness: 45, suspensionRestLength: 0.45 * SCALE_FACTOR, frictionSlip: 4, 
-            dampingRelaxation: 5.5, dampingCompression: 4.5, maxSuspensionForce: 100000, axleLocal: new CANNON.Vec3(-1,0,0), 
-            chassisConnectionPointLocal: new CANNON.Vec3(0,0,0), maxSuspensionTravel: 0.2 * SCALE_FACTOR, 
-            useCustomSlidingRotationalSpeed: true, customSlidingRotationalSpeed: -30 
+            directionLocal: new CANNON.Vec3(0,-1,0), suspensionStiffness: 45, suspensionRestLength: 0.45 * SCALE_FACTOR, 
+            frictionSlip: 4, dampingRelaxation: 5.5, dampingCompression: 4.5, maxSuspensionForce: 100000, 
+            axleLocal: new CANNON.Vec3(-1,0,0), chassisConnectionPointLocal: new CANNON.Vec3(0,0,0), 
+            maxSuspensionTravel: 0.2 * SCALE_FACTOR, useCustomSlidingRotationalSpeed: true, customSlidingRotationalSpeed: -30 
         };
 
-        // Posiciones multiplicadas por SCALE_FACTOR para que las ruedas se abran
-        const X_OFFSET = 1.1 * SCALE_FACTOR;
-        const Y_OFFSET = 0.2 * SCALE_FACTOR;
-        const Z_OFFSET = 1.6 * SCALE_FACTOR;
+        // Cálculos de Posición de Ruedas Físicas
+        const X = 1.1 * SCALE_FACTOR * SEPARACION_ANCHO; // Ancho
+        const Y = ALTURA_SUSPENSION * SCALE_FACTOR;      // Altura
+        const Z = 1.6 * SCALE_FACTOR * SEPARACION_LARGO; // Largo
 
-        // Ruedas Delanteras
-        wOpts.chassisConnectionPointLocal.set(X_OFFSET, Y_OFFSET, Z_OFFSET); vehicle.addWheel(wOpts);
-        wOpts.chassisConnectionPointLocal.set(-X_OFFSET, Y_OFFSET, Z_OFFSET); vehicle.addWheel(wOpts);
+        // Front
+        wOpts.chassisConnectionPointLocal.set(X, Y, Z); vehicle.addWheel(wOpts);
+        wOpts.chassisConnectionPointLocal.set(-X, Y, Z); vehicle.addWheel(wOpts);
         
-        // Ruedas Traseras (Escaladas)
-        const wOptsRear = { ...wOpts };
+        // Rear (Escaladas)
+        const wOptsRear = { ...wOpts }; 
         wOptsRear.radius = 0.38 * SCALE_FACTOR * REAR_WHEEL_SCALE;
-        wOptsRear.chassisConnectionPointLocal.set(X_OFFSET, Y_OFFSET, -Z_OFFSET); vehicle.addWheel(wOptsRear);
-        wOptsRear.chassisConnectionPointLocal.set(-X_OFFSET, Y_OFFSET, -Z_OFFSET); vehicle.addWheel(wOptsRear);
+        wOptsRear.chassisConnectionPointLocal.set(X, Y, -Z); vehicle.addWheel(wOptsRear);
+        wOptsRear.chassisConnectionPointLocal.set(-X, Y, -Z); vehicle.addWheel(wOptsRear);
 
         vehicle.addToWorld(world);
 
@@ -297,16 +294,14 @@
             requestAnimationFrame(animate);
             updateGamepad();
             
-            // LÓGICA DE INPUT (GYRO VS SLIDE)
+            // GYRO LOGIC (Solo sobreescribe si está en modo gyro)
             if(inputState.mode==='gyro' && inputState.gyro) {
-                // Mapear inclinación (-30 a 30 grados)
                 const val = Math.max(-30, Math.min(30, inputState.gyroVal - inputState.gyroOffset));
                 controls.steer = -(val / 30);
             }
-            // NOTA: Si es 'slide', controls.steer ya viene seteado por los eventos de mouse/touch
 
             const speed = chassisBody.velocity.length();
-            const engineForce = 3000 * SCALE_FACTOR; // Ajustar potencia al tamaño
+            const engineForce = 3000 * SCALE_FACTOR; 
             vehicle.applyEngineForce(-controls.gas * engineForce, 2); vehicle.applyEngineForce(-controls.gas * engineForce, 3);
             const brakeForce = 150 * SCALE_FACTOR;
             vehicle.setBrake(controls.brake * brakeForce * 0.5, 0); vehicle.setBrake(controls.brake * brakeForce * 0.5, 1);
